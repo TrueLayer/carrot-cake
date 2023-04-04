@@ -214,12 +214,15 @@ impl ProcessingMiddleware<Context, Error> for DummyProcessingMiddlewareA {
 pub struct DummyProcessingMiddlewareB;
 
 #[async_trait::async_trait]
-impl ProcessingMiddleware<Context, Error> for DummyProcessingMiddlewareB {
+impl<E> ProcessingMiddleware<Context, E> for DummyProcessingMiddlewareB
+where
+    E: Send + Sync + 'static,
+{
     async fn handle<'a>(
         &'a self,
         incoming: Incoming<'a, Context>,
-        next: Next<'a, Context, Error>,
-    ) -> Result<(), HandlerError<Error>> {
+        next: Next<'a, Context, E>,
+    ) -> Result<(), HandlerError<E>> {
         let outcome = next.run(incoming).await;
         // Change the outcome - nothing is fatal here!
         outcome.map_err(|mut e| {
@@ -232,12 +235,15 @@ impl ProcessingMiddleware<Context, Error> for DummyProcessingMiddlewareB {
 pub struct DummyTelemetryMiddleware;
 
 #[async_trait::async_trait]
-impl TelemetryMiddleware<Context, Error> for DummyTelemetryMiddleware {
+impl<E> TelemetryMiddleware<Context, E> for DummyTelemetryMiddleware
+where
+    E: std::fmt::Debug + Send + Sync + 'static,
+{
     async fn handle<'a>(
         &'a self,
         incoming: Incoming<'a, Context>,
-        next: MessageProcessing<'a, Context, Error>,
-    ) -> ProcessingOutcome<Error> {
+        next: MessageProcessing<'a, Context, E>,
+    ) -> ProcessingOutcome<E> {
         let outcome = next.run(incoming).await;
         match outcome.result() {
             Ok(_) => {

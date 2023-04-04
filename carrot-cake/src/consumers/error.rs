@@ -6,7 +6,7 @@ use std::fmt;
 /// logging and metrics.
 #[derive(Debug)]
 pub struct HandlerError<E> {
-    /// The underlying error returned by the message handler.
+    /// The underlying error type returned by the message handler.
     pub inner_error: E,
     /// `error_type` distinguishes two classes of errors:
     /// - transient errors; message processing might succeed if retried after a short delay
