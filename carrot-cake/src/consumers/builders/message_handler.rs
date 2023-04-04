@@ -270,8 +270,8 @@ where
     /// ```no_run
     /// # use std::sync::Arc;
     /// # use carrot_cake::consumers::{MessageHandlerBuilder, ConsumerTransientErrorHook};
-    /// # let message_handler_builder: MessageHandlerBuilder<()> = unimplemented!();
-    /// # let other_message_handler_builder: MessageHandlerBuilder<()> = unimplemented!();
+    /// # let message_handler_builder: MessageHandlerBuilder<(), ()> = unimplemented!();
+    /// # let other_message_handler_builder: MessageHandlerBuilder<(), ()> = unimplemented!();
     /// let hook: Arc<dyn ConsumerTransientErrorHook>; // some dynamic shared error hook
     /// # hook = unimplemented!();
     ///

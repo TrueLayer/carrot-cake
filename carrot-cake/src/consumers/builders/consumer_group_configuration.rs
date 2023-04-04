@@ -102,8 +102,9 @@ where
     /// use carrot_cake::rabbit_mq::ConnectionFactory;
     ///
     /// # type Ctx = ();
-    /// # let consumer_group_builder: ConsumerGroupConfigurationBuilder<Ctx, ConnectionFactory> = unimplemented!();
-    /// let middleware: std::sync::Arc<dyn ProcessingMiddleware<Ctx>>; // some dynamic pointer to middleware
+    /// # type Error = ();
+    /// # let consumer_group_builder: ConsumerGroupConfigurationBuilder<Ctx,Error, ConnectionFactory> = unimplemented!();
+    /// let middleware: std::sync::Arc<dyn ProcessingMiddleware<Ctx, Error>>; // some dynamic pointer to middleware
     /// # middleware = unimplemented!();
     ///
     /// consumer_group_builder.with_dyn_processing_middleware(middleware);
@@ -152,8 +153,9 @@ where
     /// use carrot_cake::rabbit_mq::ConnectionFactory;
     ///
     /// # type Ctx = ();
-    /// # let consumer_group_builder: ConsumerGroupConfigurationBuilder<Ctx, ConnectionFactory> = unimplemented!();
-    /// let middleware: std::sync::Arc<dyn TelemetryMiddleware<Ctx>>; // some dynamic pointer to middleware
+    /// # type Error = ();
+    /// # let consumer_group_builder: ConsumerGroupConfigurationBuilder<Ctx, Error, ConnectionFactory> = unimplemented!();
+    /// let middleware: std::sync::Arc<dyn TelemetryMiddleware<Ctx, Error>>; // some dynamic pointer to middleware
     /// # middleware = unimplemented!();
     ///
     /// consumer_group_builder.with_dyn_telemetry_middleware(middleware);
@@ -263,8 +265,8 @@ where
     /// # use std::sync::Arc;
     /// # use carrot_cake::consumers::{ConsumerGroupConfigurationBuilder, ConsumerTransientErrorHook};
     /// # use carrot_cake::rabbit_mq::ConnectionFactory;
-    /// # let consumer_group_builder: ConsumerGroupConfigurationBuilder<(), ConnectionFactory> = unimplemented!();
-    /// # let other_consumer_group_builder: ConsumerGroupConfigurationBuilder<(), ConnectionFactory> = unimplemented!();
+    /// # let consumer_group_builder: ConsumerGroupConfigurationBuilder<(),(), ConnectionFactory> = unimplemented!();
+    /// # let other_consumer_group_builder: ConsumerGroupConfigurationBuilder<(),(), ConnectionFactory> = unimplemented!();
     /// let hook: Arc<dyn ConsumerTransientErrorHook>; // some dynamic shared error hook
     /// # hook = unimplemented!();
     ///
