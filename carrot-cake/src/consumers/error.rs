@@ -1,59 +1,35 @@
 use std::fmt;
-use truelayer_sli::SliErrorType;
 
 /// The error type returned by message handlers.
 ///
 /// It contains all the information we need for our observability needs, both in terms of
 /// logging and metrics.
 #[derive(Debug)]
-pub struct HandlerError {
-    /// The underlying error returned by the processing, wrapped in an `anyhow::Error` opaque
-    /// error type.
-    pub inner_error: anyhow::Error,
+pub struct HandlerError<E> {
+    /// The underlying error type returned by the message handler.
+    pub inner_error: E,
     /// `error_type` distinguishes two classes of errors:
     /// - transient errors; message processing might succeed if retried after a short delay
     /// - fatal errors; no matter how many times you retry, processing will never succeed
     ///
     /// Check out [`ErrorType`]'s documentation for more details.
     pub error_type: ErrorType,
-    /// The SLI error type assigns the labels defined in
-    /// [ADR14](https://github.com/TrueLayer/truelayer-architecture/blob/main/adrs/truelayer-wide/0014-log-structure.md)
-    /// to compute our service level indicators (SLIs) for message consumers.
-    ///
-    /// See [`SliErrorType`]'s documentation for more details.
-    pub sli_error_type: SliErrorType,
 }
 
-impl std::error::Error for HandlerError {}
+impl<E: std::error::Error + 'static> std::error::Error for HandlerError<E> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.inner_error)
+    }
+}
 
-impl fmt::Display for HandlerError {
+impl<E: fmt::Display> fmt::Display for HandlerError<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "Handling of a message failed due to a {} issue - ",
             self.error_type
         )?;
-        match &self.sli_error_type {
-            SliErrorType::InvalidRequestError => f.write_str("InvalidRequestError"),
-            SliErrorType::ServiceError => f.write_str("ServiceError"),
-            SliErrorType::ExternalDependencyError { dependency_name } => write!(
-                f,
-                "ExternalDependencyError[{}]",
-                dependency_name
-                    .as_ref()
-                    .map(|s| s.as_str())
-                    .unwrap_or_else(|| "unknown")
-            ),
-            SliErrorType::InternalDependencyError { dependency_name } => write!(
-                f,
-                "InternalDependencyError[{}]",
-                dependency_name
-                    .as_ref()
-                    .map(|s| s.as_str())
-                    .unwrap_or_else(|| "unknown")
-            ),
-        }?;
-        write!(f, ".\n{:?}", self.inner_error)
+        write!(f, ".\n{}", self.inner_error)
     }
 }
 

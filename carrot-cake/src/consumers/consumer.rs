@@ -32,7 +32,7 @@ use uuid::Uuid;
 ///
 /// [`ConsumerGroup`]: super::ConsumerGroup
 /// [`MessageHandler`]: super::MessageHandler
-pub(super) struct Consumer<C: Send + Sync + 'static> {
+pub(super) struct Consumer<C: Send + Sync + 'static, E: Send + Sync + 'static> {
     /// An open channel to communicate with RabbitMq.
     /// Used to create a queue consumer/fetch single messages, according to the caller usage patterns.
     channel: Channel<WITHOUT_PUBLISHER_CONFIRMATION>,
@@ -48,16 +48,16 @@ pub(super) struct Consumer<C: Send + Sync + 'static> {
     context: Arc<C>,
     /// `handler` determines what processing will be run on each incoming message.
     /// See `Handler`'s documentation for more information.
-    handler: Arc<dyn Handler<C>>,
+    handler: Arc<dyn Handler<C, E>>,
     /// `processing_middleware_chain` is an ordered collection of [`ProcessingMiddleware`]s
     /// that will be executed (in order!) before/after the message is processed by the `handler`.
     /// See [`ProcessingMiddleware`]'s documentation for more information.
-    processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<C>>>,
+    processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<C, E>>>,
     /// `processing_middleware_chain` is an ordered collection of [`TelemetryMiddleware`]s
     /// that will be executed (in order!) before/after the message is processed by `handler` and
     /// [`ProcessingMiddleware`]s.
     /// See [`TelemetryMiddleware`]'s documentation for more information.
-    telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<C>>>,
+    telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<C, E>>>,
     /// `transient_error_hook` specifies behaviour to be executed when message processing fails due to
     /// an error labelled as `transient`.
     transient_error_hook: Arc<dyn ConsumerTransientErrorHook>,
@@ -65,7 +65,7 @@ pub(super) struct Consumer<C: Send + Sync + 'static> {
     priority: Option<i32>,
 }
 
-impl<C: Send + Sync + 'static> Consumer<C> {
+impl<C: Send + Sync + 'static, E: Send + Sync + 'static> Consumer<C, E> {
     /// Configure a new RabbitMq consumer.
     ///
     /// `Consumer::new` connects to RabbitMq, sets up the specified queue topology and returns a ready-to-run
@@ -93,13 +93,13 @@ impl<C: Send + Sync + 'static> Consumer<C> {
         // If the context is already behind an Arc pointer, we won't double-wrap it.
         // Useful to share the same context across multiple consumers.
         context: impl Into<Arc<C>>,
-        handler: Arc<dyn Handler<C>>,
+        handler: Arc<dyn Handler<C, E>>,
         pre_start_hooks: Vec<Arc<dyn ConsumerPreStartHook>>,
-        processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<C>>>,
-        telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<C>>>,
+        processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<C, E>>>,
+        telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<C, E>>>,
         transient_error_hook: Arc<dyn ConsumerTransientErrorHook>,
         priority: Option<i32>,
-    ) -> Result<Consumer<C>, anyhow::Error> {
+    ) -> Result<Consumer<C, E>, anyhow::Error> {
         let channel = transport_factory
             .get_channel_without_confirmation()
             .await?
@@ -148,13 +148,13 @@ impl<C: Send + Sync + 'static> Consumer<C> {
         // If the context is already behind an Arc pointer, we won't double-wrap it.
         // Useful to share the same context across multiple consumers.
         context: impl Into<Arc<C>>,
-        handler: Arc<dyn Handler<C>>,
+        handler: Arc<dyn Handler<C, E>>,
         pre_start_hooks: Vec<Arc<dyn ConsumerPreStartHook>>,
-        processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<C>>>,
-        telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<C>>>,
+        processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<C, E>>>,
+        telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<C, E>>>,
         transient_error_hook: Arc<dyn ConsumerTransientErrorHook>,
         priority: Option<i32>,
-    ) -> Result<Consumer<C>, anyhow::Error> {
+    ) -> Result<Consumer<C, E>, anyhow::Error> {
         channel
             .raw()
             .basic_qos(prefetch_count, BasicQosOptions { global: false })
@@ -302,9 +302,9 @@ impl<C: Send + Sync + 'static> Consumer<C> {
     async fn process(
         delivery: Delivery,
         context: Arc<C>,
-        handler: Arc<dyn Handler<C>>,
-        processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<C>>>,
-        telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<C>>>,
+        handler: Arc<dyn Handler<C, E>>,
+        processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<C, E>>>,
+        telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<C, E>>>,
         queue_name: String,
         transient_error_hook: Arc<dyn ConsumerTransientErrorHook>,
     ) {

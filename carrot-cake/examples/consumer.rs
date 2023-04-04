@@ -1,8 +1,9 @@
+use anyhow::Error;
 use carrot_cake::consumers::hooks::pre_start::DurableExchangeBinder;
 use carrot_cake::consumers::hooks::transient_error::{AlwaysRequeue, NeverRequeue};
 use carrot_cake::consumers::{
     ConsumerGroup, ErrorType, HandlerError, Incoming, MessageHandler, MessageProcessing, Next,
-    ProcessingMiddleware, ProcessingOutcome, SliErrorType, TelemetryMiddleware,
+    ProcessingMiddleware, ProcessingOutcome, TelemetryMiddleware,
 };
 use carrot_cake::{configuration::RabbitMqSettings, rabbit_mq::ConnectionFactory};
 
@@ -149,7 +150,7 @@ pub struct Context {
 
 /// A dummy message handler - processing succeeds if the message payload has an odd number of bytes,
 /// it fails otherwise.
-pub async fn odd_handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+pub async fn odd_handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError<Error>> {
     // `data` is the message payload.
     let n_bytes = incoming.message.data.len();
     if n_bytes % 2 == 1 {
@@ -164,14 +165,13 @@ pub async fn odd_handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerE
             ),
             // We are marking the error as fatal - never to retried.
             error_type: ErrorType::Fatal,
-            sli_error_type: SliErrorType::InvalidRequestError,
         })
     }
 }
 
 /// A dummy message handler - processing succeeds if the message payload has an even number of bytes,
 /// it fails otherwise.
-pub async fn even_handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+pub async fn even_handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError<Error>> {
     let n_bytes = incoming.message.data.len();
     if n_bytes % 2 == 0 {
         Ok(())
@@ -183,7 +183,6 @@ pub async fn even_handler(incoming: Incoming<'_, Context>) -> Result<(), Handler
                 incoming.context.seed
             ),
             error_type: ErrorType::Fatal,
-            sli_error_type: SliErrorType::InvalidRequestError,
         })
     }
 }
@@ -197,12 +196,12 @@ pub async fn even_handler(incoming: Incoming<'_, Context>) -> Result<(), Handler
 pub struct DummyProcessingMiddlewareA;
 
 #[async_trait::async_trait]
-impl ProcessingMiddleware<Context> for DummyProcessingMiddlewareA {
+impl ProcessingMiddleware<Context, Error> for DummyProcessingMiddlewareA {
     async fn handle<'a>(
         &'a self,
         incoming: Incoming<'a, Context>,
-        next: Next<'a, Context>,
-    ) -> Result<(), HandlerError> {
+        next: Next<'a, Context, Error>,
+    ) -> Result<(), HandlerError<Error>> {
         let outcome = next.run(incoming).await;
         // Change the outcome - nothing is transient here!
         outcome.map_err(|mut e| {
@@ -215,12 +214,15 @@ impl ProcessingMiddleware<Context> for DummyProcessingMiddlewareA {
 pub struct DummyProcessingMiddlewareB;
 
 #[async_trait::async_trait]
-impl ProcessingMiddleware<Context> for DummyProcessingMiddlewareB {
+impl<E> ProcessingMiddleware<Context, E> for DummyProcessingMiddlewareB
+where
+    E: Send + Sync + 'static,
+{
     async fn handle<'a>(
         &'a self,
         incoming: Incoming<'a, Context>,
-        next: Next<'a, Context>,
-    ) -> Result<(), HandlerError> {
+        next: Next<'a, Context, E>,
+    ) -> Result<(), HandlerError<E>> {
         let outcome = next.run(incoming).await;
         // Change the outcome - nothing is fatal here!
         outcome.map_err(|mut e| {
@@ -233,12 +235,15 @@ impl ProcessingMiddleware<Context> for DummyProcessingMiddlewareB {
 pub struct DummyTelemetryMiddleware;
 
 #[async_trait::async_trait]
-impl TelemetryMiddleware<Context> for DummyTelemetryMiddleware {
+impl<E> TelemetryMiddleware<Context, E> for DummyTelemetryMiddleware
+where
+    E: std::fmt::Debug + Send + Sync + 'static,
+{
     async fn handle<'a>(
         &'a self,
         incoming: Incoming<'a, Context>,
-        next: MessageProcessing<'a, Context>,
-    ) -> ProcessingOutcome {
+        next: MessageProcessing<'a, Context, E>,
+    ) -> ProcessingOutcome<E> {
         let outcome = next.run(incoming).await;
         match outcome.result() {
             Ok(_) => {

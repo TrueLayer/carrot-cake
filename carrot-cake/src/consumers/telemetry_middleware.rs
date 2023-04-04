@@ -6,7 +6,6 @@ use crate::consumers::{
     ConsumerTransientErrorHook, ErrorType, HandlerError, Incoming, ShouldRequeue,
 };
 use lapin::options::{BasicAckOptions, BasicNackOptions, BasicRejectOptions};
-use std::ops::Deref;
 use std::sync::Arc;
 
 /// Middlewares to collect and emit telemetry data based on the outcome of message processing.
@@ -48,24 +47,24 @@ use std::sync::Arc;
 /// [Extract information recorded in the message extensions]: crate::consumers::set_message_local_item
 /// [`ProcessingMiddleware`]: crate::consumers::ProcessingMiddleware
 #[async_trait::async_trait]
-pub trait TelemetryMiddleware<Context>: 'static + Send + Sync {
+pub trait TelemetryMiddleware<Context, Error>: 'static + Send + Sync {
     /// Asynchronously handle the request, and return a response.
     async fn handle<'a>(
         &'a self,
         incoming: Incoming<'a, Context>,
-        next: MessageProcessing<'a, Context>,
-    ) -> ProcessingOutcome;
+        next: MessageProcessing<'a, Context, Error>,
+    ) -> ProcessingOutcome<Error>;
 }
 
 /// The remainder of the middleware chain (telemetry + processing), including the final message handler.
 #[allow(missing_debug_implementations)]
-pub struct MessageProcessing<'a, Context> {
+pub struct MessageProcessing<'a, Context, Error> {
     /// Logic to handle transient failures returned by the processing chain.
     pub(super) transient_error_hook: Arc<dyn ConsumerTransientErrorHook>,
     /// The chain of processing middlewares, including the final message handler.
-    pub(super) processing_chain: Next<'a, Context>,
+    pub(super) processing_chain: Next<'a, Context, Error>,
     /// The remainder of the telemetry middleware chain.
-    pub(super) next_telemetry_middleware: &'a [Arc<dyn TelemetryMiddleware<Context>>],
+    pub(super) next_telemetry_middleware: &'a [Arc<dyn TelemetryMiddleware<Context, Error>>],
 }
 
 /// The outcome of message processing:
@@ -88,21 +87,13 @@ pub struct MessageProcessing<'a, Context> {
 /// [`ProcessingOutcome`] in [`TelemetryMiddleware::handle`]. The telemetry middleware is forced
 /// to propagate the outcome returned by [`MessageProcessing`]
 #[derive(Debug)]
-pub struct ProcessingOutcome {
-    outcome: Result<(), ProcessingError>,
+pub struct ProcessingOutcome<Error> {
+    outcome: Result<(), ProcessingError<Error>>,
     broker_action: BrokerAction,
 }
 
-impl Deref for ProcessingOutcome {
-    type Target = Result<(), ProcessingError>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.outcome
-    }
-}
-
-impl ProcessingOutcome {
-    pub fn result(&self) -> &Result<(), ProcessingError> {
+impl<Error> ProcessingOutcome<Error> {
+    pub fn result(&self) -> &Result<(), ProcessingError<Error>> {
         &self.outcome
     }
 
@@ -121,10 +112,10 @@ impl ProcessingOutcome {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum ProcessingError {
+pub enum ProcessingError<Error> {
     /// An error was encountered while processing the message.
     #[error("An error was encountered while processing of the message.")]
-    HandlerError(HandlerError),
+    HandlerError(HandlerError<Error>),
     /// Failed to ack message.
     #[error("Failed to ack message.")]
     AckError(#[source] anyhow::Error),
@@ -134,13 +125,13 @@ pub enum ProcessingError {
         #[source]
         error: anyhow::Error,
         /// The processing error that led us to try to tell the AMQP broker to nack the message.
-        handler_error: HandlerError,
+        handler_error: HandlerError<Error>,
     },
 }
 
-impl<'a, Context: 'static> MessageProcessing<'a, Context> {
+impl<'a, Context: 'static, Error: 'static> MessageProcessing<'a, Context, Error> {
     /// Asynchronously execute the remaining middleware chain.
-    pub async fn run(mut self, incoming: Incoming<'_, Context>) -> ProcessingOutcome {
+    pub async fn run(mut self, incoming: Incoming<'_, Context>) -> ProcessingOutcome<Error> {
         // If there is at least one middleware in the chain, get a reference to it and store
         // the remaining ones in `next_middleware`.
         // Then call the middleware passing `self` in the handler, recursively.
@@ -215,10 +206,10 @@ enum BrokerAction {
 /// Based on the outcome of processing communicate with the AMQP broker to ack/nack/reject the message.
 /// If processing failed, it takes care to determine (via the transient error hook) if the message
 /// should be requeued (nack), requeued with ack (ack) or not (reject).
-async fn ack_or_nack(
+async fn ack_or_nack<Error>(
     transient_error_hook: Arc<dyn ConsumerTransientErrorHook>,
     message: &Delivery,
-    outcome: &Result<(), HandlerError>,
+    outcome: &Result<(), HandlerError<Error>>,
 ) -> Result<BrokerAction, InnerBrokerError> {
     match outcome {
         Ok(_) => {

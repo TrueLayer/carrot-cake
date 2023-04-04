@@ -1,6 +1,5 @@
 //! Middleware types are heavily inspired by `tide`'s approach to middleware.
 use crate::consumers::{Handler, HandlerError, Incoming};
-use std::future::Future;
 use std::sync::Arc;
 
 /// Middlewares to execute logic before and after the message handler function.
@@ -44,42 +43,26 @@ use std::sync::Arc;
 /// [`TelemetryMiddleware`]: crate::consumers::TelemetryMiddleware
 /// [Extract information recorded in the message extensions]: crate::consumers::set_message_local_item
 #[async_trait::async_trait]
-pub trait ProcessingMiddleware<Context>: 'static + Send + Sync {
+pub trait ProcessingMiddleware<Context, Error>: 'static + Send + Sync {
     /// Asynchronously handle the request, and return a response.
     async fn handle<'a>(
         &'a self,
         incoming: Incoming<'a, Context>,
-        next: Next<'a, Context>,
-    ) -> Result<(), HandlerError>;
-}
-
-#[async_trait::async_trait]
-impl<Context, F, Fut> ProcessingMiddleware<Context> for F
-where
-    Context: Send + Sync + 'static,
-    F: Send + Sync + 'static + for<'a> Fn(Incoming<'a, Context>, Next<'a, Context>) -> Fut,
-    Fut: Future<Output = Result<(), HandlerError>> + Send + 'static,
-{
-    async fn handle<'b>(
-        &'b self,
-        incoming: Incoming<'b, Context>,
-        next: Next<'b, Context>,
-    ) -> Result<(), HandlerError> {
-        (self)(incoming, next).await
-    }
+        next: Next<'a, Context, Error>,
+    ) -> Result<(), HandlerError<Error>>;
 }
 
 /// The remainder of the processing middleware chain, including the final message handler.
 #[allow(missing_debug_implementations)]
-pub struct Next<'a, Context> {
-    pub(super) handler: &'a dyn Handler<Context>,
+pub struct Next<'a, Context, Error> {
+    pub(super) handler: &'a dyn Handler<Context, Error>,
     /// The remainder of the processing middleware chain.
-    pub(super) next_middleware: &'a [Arc<dyn ProcessingMiddleware<Context>>],
+    pub(super) next_middleware: &'a [Arc<dyn ProcessingMiddleware<Context, Error>>],
 }
 
-impl<'a, Context: 'static> Next<'a, Context> {
+impl<'a, Context: 'static, Error: 'static> Next<'a, Context, Error> {
     /// Asynchronously execute the remaining processing middleware chain.
-    pub async fn run(mut self, incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    pub async fn run(mut self, incoming: Incoming<'_, Context>) -> Result<(), HandlerError<Error>> {
         // If there is at least one processing middleware in the chain, get a reference to it and store
         // the remaining ones in `next_middleware`.
         // Then call the middleware passing `self` in the handler, recursively.

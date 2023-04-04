@@ -40,16 +40,18 @@ use std::sync::Arc;
 /// handler level (e.g. lifecycle hooks).
 ///
 /// Check out the builder methods for an in-depth explanation for each configuration option.
-pub struct ConsumerGroup<Context>
+pub struct ConsumerGroup<Context, Error>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
 {
-    consumers: Vec<Consumer<Context>>,
+    consumers: Vec<Consumer<Context, Error>>,
 }
 
-impl<Context> ConsumerGroup<Context>
+impl<Context, Error> ConsumerGroup<Context, Error>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
 {
     /// Start building a [`ConsumerGroup`].
     ///
@@ -80,7 +82,7 @@ where
     pub fn builder<Factory: TransportFactory>(
         transport_factory: Factory,
         context: impl Into<Arc<Context>>,
-    ) -> ConsumerGroupConfigurationBuilder<Context, Factory> {
+    ) -> ConsumerGroupConfigurationBuilder<Context, Error, Factory> {
         ConsumerGroupConfigurationBuilder::new(transport_factory, context.into())
     }
 
@@ -125,25 +127,27 @@ where
 /// has been finalised.
 ///
 /// Use [`ConsumerGroup::builder`](super::ConsumerGroup::builder) as entrypoint.
-pub struct ConsumerGroupBuilder<Context, Factory>
+pub struct ConsumerGroupBuilder<Context, Error, Factory>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
     Factory: TransportFactory,
 {
-    pub(super) group_configuration: ConsumerGroupConfiguration<Context, Factory>,
-    pub(super) message_handlers: Vec<MessageHandler<Context>>,
+    pub(super) group_configuration: ConsumerGroupConfiguration<Context, Error, Factory>,
+    pub(super) message_handlers: Vec<MessageHandler<Context, Error>>,
 }
 
-impl<Context, Factory> ConsumerGroupBuilder<Context, Factory>
+impl<Context, Error, Factory> ConsumerGroupBuilder<Context, Error, Factory>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
     Factory: TransportFactory,
 {
     /// Add another [`MessageHandler`] to the [`ConsumerGroup`].
     ///
     /// Check out [`MessageHandler::builder`] to build out a handler.
     #[must_use]
-    pub fn message_handler(mut self, message_handler: MessageHandler<Context>) -> Self {
+    pub fn message_handler(mut self, message_handler: MessageHandler<Context, Error>) -> Self {
         self.message_handlers.push(message_handler);
         self
     }
@@ -151,9 +155,9 @@ where
     /// Merge the message handler-level and the group-level configuration to build the underlying
     /// [`Consumer`](super::super::consumer::Consumer) instance.
     async fn build_consumer(
-        group_configuration: &ConsumerGroupConfiguration<Context, Factory>,
-        message_handler: MessageHandler<Context>,
-    ) -> Result<Consumer<Context>, anyhow::Error> {
+        group_configuration: &ConsumerGroupConfiguration<Context, Error, Factory>,
+        message_handler: MessageHandler<Context, Error>,
+    ) -> Result<Consumer<Context, Error>, anyhow::Error> {
         // Add a prefix to the queue name, if specified.
         let queue_name = if let Some(prefix) = group_configuration.queue_name_prefix.as_ref() {
             format!("{0}_{1}", prefix, message_handler.queue_name)
@@ -223,7 +227,7 @@ where
     ///
     /// `build` does NOT trigger consumptions of messages!
     /// Check out [`ConsumerGroup::run_until_stopped`].
-    pub async fn build(self) -> Result<ConsumerGroup<Context>, anyhow::Error> {
+    pub async fn build(self) -> Result<ConsumerGroup<Context, Error>, anyhow::Error> {
         let Self {
             group_configuration,
             message_handlers,
