@@ -1,7 +1,5 @@
 //! Facilities to consume messages from a RabbitMq queue. Check out [`ConsumerGroup`] as a
 //! starting point.
-// Re-export for convenience
-pub use truelayer_sli::SliErrorType;
 
 pub use builders::{
     ConsumerGroup, ConsumerGroupBuilder, ConsumerGroupConfigurationBuilder, MessageHandler,

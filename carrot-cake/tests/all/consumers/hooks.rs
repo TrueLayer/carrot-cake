@@ -10,7 +10,7 @@ use carrot_cake::{
         },
         ConsumerGroup, ConsumerPreStartHook, ConsumerTransientErrorHook, ErrorType, HandlerError,
         Incoming, MessageHandler, MessageProcessing, ProcessingOutcome, ShouldRequeue,
-        SliErrorType, TelemetryMiddleware,
+        TelemetryMiddleware,
     },
     publishers::MessageEnvelope,
     rabbit_mq::{Channel, WITHOUT_PUBLISHER_CONFIRMATION},
@@ -24,7 +24,7 @@ async fn if_a_message_level_pre_start_hook_is_provided_the_group_level_one_is_ig
     #[derive(Clone)]
     struct Context;
 
-    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         Ok(())
     }
 
@@ -74,7 +74,7 @@ async fn if_multiple_pre_hooks_are_set_they_are_all_called() {
     #[derive(Clone)]
     struct Context;
 
-    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         Ok(())
     }
 
@@ -121,7 +121,7 @@ async fn if_a_pre_start_hook_returns_an_error_the_consumer_group_fails_to_build(
     #[derive(Clone)]
     struct Context;
 
-    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         Ok(())
     }
 
@@ -157,11 +157,10 @@ async fn if_a_message_level_transient_error_hook_is_provided_the_group_level_one
     #[derive(Clone)]
     struct Context;
 
-    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         Err(HandlerError {
-            inner_error: anyhow::anyhow!("Always fail with transient error to trigger hooks"),
+            inner_error: (),
             error_type: ErrorType::Transient,
-            sli_error_type: SliErrorType::ServiceError,
         })
     }
 
@@ -226,12 +225,12 @@ struct RequeueFlagMiddleware {
 }
 
 #[async_trait::async_trait]
-impl<Context: Sync + Send + 'static> TelemetryMiddleware<Context> for RequeueFlagMiddleware {
+impl<Context: Sync + Send + 'static> TelemetryMiddleware<Context, ()> for RequeueFlagMiddleware {
     async fn handle<'a>(
         &'a self,
         incoming: Incoming<'a, Context>,
-        next: MessageProcessing<'a, Context>,
-    ) -> ProcessingOutcome {
+        next: MessageProcessing<'a, Context, ()>,
+    ) -> ProcessingOutcome<()> {
         let outcome = next.run(incoming).await;
         {
             *self.last_message_was_requeued.lock().await = outcome.was_requeued();
@@ -245,11 +244,10 @@ async fn if_a_message_failed_with_a_fatal_error_was_requeued_returns_false() {
     #[derive(Clone)]
     struct Context;
 
-    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         Err(HandlerError {
-            inner_error: anyhow::anyhow!("Always fail with fatal error"),
+            inner_error: (),
             error_type: ErrorType::Fatal,
-            sli_error_type: SliErrorType::ServiceError,
         })
     }
 
@@ -295,12 +293,11 @@ async fn was_requeued_returns_true_for_requeued_transient_errors() {
     #[derive(Clone)]
     struct Context;
 
-    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         Err(HandlerError {
-            inner_error: anyhow::anyhow!("Always fail with fatal error"),
+            inner_error: (),
             // Use transient to trigger the error hook
             error_type: ErrorType::Transient,
-            sli_error_type: SliErrorType::ServiceError,
         })
     }
 
@@ -347,12 +344,11 @@ async fn was_requeued_returns_false_for_non_requeued_transient_errors() {
     #[derive(Clone)]
     struct Context;
 
-    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         Err(HandlerError {
-            inner_error: anyhow::anyhow!("Always fail with fatal error"),
+            inner_error: (),
             // Use transient to trigger the error hook
             error_type: ErrorType::Transient,
-            sli_error_type: SliErrorType::ServiceError,
         })
     }
 
@@ -399,7 +395,7 @@ async fn was_requeued_returns_false_for_successes() {
     #[derive(Clone)]
     struct Context;
 
-    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         Ok(())
     }
 

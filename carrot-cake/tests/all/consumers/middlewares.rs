@@ -18,7 +18,7 @@ async fn middlewares_are_executed_in_the_expected_order() {
         middleware_counter: Arc<Mutex<u64>>,
     }
 
-    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         let mut counter = incoming.context.middleware_counter.lock().await;
         *counter += 1;
         Ok(())
@@ -31,12 +31,12 @@ async fn middlewares_are_executed_in_the_expected_order() {
     }
 
     #[async_trait::async_trait]
-    impl ProcessingMiddleware<Context> for CountingMiddleware {
+    impl ProcessingMiddleware<Context, ()> for CountingMiddleware {
         async fn handle<'a>(
             &'a self,
             incoming: Incoming<'a, Context>,
-            next: Next<'a, Context>,
-        ) -> Result<(), HandlerError> {
+            next: Next<'a, Context, ()>,
+        ) -> Result<(), HandlerError<()>> {
             let context = incoming.context.clone();
 
             {
@@ -58,12 +58,12 @@ async fn middlewares_are_executed_in_the_expected_order() {
     }
 
     #[async_trait::async_trait]
-    impl TelemetryMiddleware<Context> for CountingMiddleware {
+    impl TelemetryMiddleware<Context, ()> for CountingMiddleware {
         async fn handle<'a>(
             &'a self,
             incoming: Incoming<'a, Context>,
-            next: MessageProcessing<'a, Context>,
-        ) -> ProcessingOutcome {
+            next: MessageProcessing<'a, Context, ()>,
+        ) -> ProcessingOutcome<()> {
             let context = incoming.context.clone();
 
             {

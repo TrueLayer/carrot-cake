@@ -275,7 +275,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "truelayer-sli",
  "uuid",
 ]
 
@@ -1852,12 +1851,6 @@ dependencies = [
  "thread_local",
  "tracing-core",
 ]
-
-[[package]]
-name = "truelayer-sli"
-version = "0.1.12"
-source = "registry+https://dl.cloudsmith.io/basic/truelayer/rustlayer/cargo/index.git"
-checksum = "b5101ee6f66b8a13e3466e8f77615b94792ed5a725e72a7af458b353ab8e568d"
 
 [[package]]
 name = "typenum"

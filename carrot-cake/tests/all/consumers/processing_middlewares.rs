@@ -15,7 +15,7 @@ async fn a_middleware_can_abort_early_and_prevent_handler_execution() {
         handler_was_called: Arc<Mutex<bool>>,
     }
 
-    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         let mut guard = incoming.context.handler_was_called.lock().await;
         *guard = true;
         Ok(())
@@ -24,12 +24,12 @@ async fn a_middleware_can_abort_early_and_prevent_handler_execution() {
     struct AbortingMiddleware;
 
     #[async_trait::async_trait]
-    impl<C: Send + Sync + 'static> ProcessingMiddleware<C> for AbortingMiddleware {
+    impl<C: Send + Sync + 'static> ProcessingMiddleware<C, ()> for AbortingMiddleware {
         async fn handle<'a>(
             &'a self,
             _incoming: Incoming<'a, C>,
-            _next: Next<'a, C>,
-        ) -> Result<(), HandlerError> {
+            _next: Next<'a, C, ()>,
+        ) -> Result<(), HandlerError<()>> {
             // Never call the handler
             Ok(())
         }
@@ -81,7 +81,7 @@ async fn middlewares_are_executed_in_registration_order() {
         middleware_counter: Arc<Mutex<u64>>,
     }
 
-    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         let mut counter = incoming.context.middleware_counter.lock().await;
         *counter += 1;
         Ok(())
@@ -94,12 +94,12 @@ async fn middlewares_are_executed_in_registration_order() {
     }
 
     #[async_trait::async_trait]
-    impl ProcessingMiddleware<Context> for CountingMiddleware {
+    impl ProcessingMiddleware<Context, ()> for CountingMiddleware {
         async fn handle<'a>(
             &'a self,
             incoming: Incoming<'a, Context>,
-            next: Next<'a, Context>,
-        ) -> Result<(), HandlerError> {
+            next: Next<'a, Context, ()>,
+        ) -> Result<(), HandlerError<()>> {
             let context = incoming.context.clone();
 
             {
@@ -174,7 +174,7 @@ async fn handler_middlewares_are_only_executed_for_matching_messages() {
     #[derive(Clone)]
     struct Context;
 
-    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         Ok(())
     }
 
@@ -184,12 +184,12 @@ async fn handler_middlewares_are_only_executed_for_matching_messages() {
     }
 
     #[async_trait::async_trait]
-    impl ProcessingMiddleware<Context> for SwitchMiddleware {
+    impl ProcessingMiddleware<Context, ()> for SwitchMiddleware {
         async fn handle<'a>(
             &'a self,
             incoming: Incoming<'a, Context>,
-            next: Next<'a, Context>,
-        ) -> Result<(), HandlerError> {
+            next: Next<'a, Context, ()>,
+        ) -> Result<(), HandlerError<()>> {
             {
                 *self.has_been_executed.lock().await = true;
                 // Drop lock

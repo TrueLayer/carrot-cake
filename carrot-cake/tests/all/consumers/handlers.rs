@@ -27,7 +27,7 @@ async fn the_consumer_group_waits_for_completion_of_in_flight_processing_before_
         handler_completed: Arc<Mutex<bool>>,
     }
 
-    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         // Take a long-ish time to process the message.
         tokio::time::sleep(Duration::from_secs(10)).await;
         *incoming.context.handler_completed.lock().await = true;
@@ -77,7 +77,7 @@ async fn message_id_and_timestamp_injected_when_missing() {
         is_message_id_present: Arc<Mutex<bool>>,
     }
 
-    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         *incoming.context.is_timestamp_present.lock().await =
             incoming.message.properties.timestamp().is_some();
         *incoming.context.is_message_id_present.lock().await =
@@ -140,7 +140,7 @@ async fn consumer_priority_and_prefetch() {
                     .handler(|inc: Incoming<Mutex<Vec<i32>>>| async move {
                         eprintln!("<<< Handling message (max)");
                         inc.context.lock().await.push(i32::MAX);
-                        Result::<(), HandlerError>::Ok(())
+                        Result::<(), HandlerError<()>>::Ok(())
                     }),
             )
             .message_handler(
@@ -151,7 +151,7 @@ async fn consumer_priority_and_prefetch() {
                     .handler(|inc: Incoming<Mutex<Vec<i32>>>| async move {
                         eprintln!("<<< Handling message (0)");
                         inc.context.lock().await.push(0);
-                        Result::<(), HandlerError>::Ok(())
+                        Result::<(), HandlerError<()>>::Ok(())
                     }),
             )
             .message_handler(
@@ -162,7 +162,7 @@ async fn consumer_priority_and_prefetch() {
                     .handler(|inc: Incoming<Mutex<Vec<i32>>>| async move {
                         eprintln!("<<< Handling message (min)");
                         inc.context.lock().await.push(i32::MIN);
-                        Result::<(), HandlerError>::Ok(())
+                        Result::<(), HandlerError<()>>::Ok(())
                     }),
             )
             .build()
@@ -214,7 +214,7 @@ async fn message_id_and_timestamp_not_replaced_when_provided() {
         message_id: Arc<Mutex<Option<ShortString>>>,
     }
 
-    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         *incoming.context.timestamp.lock().await = *incoming.message.properties.timestamp();
         *incoming.context.message_id.lock().await =
             incoming.message.properties.message_id().to_owned();
@@ -276,7 +276,7 @@ async fn consumers_shut_down_on_signal() {
         count: Arc<RwLock<usize>>,
     }
 
-    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
+    async fn handler(incoming: Incoming<'_, Context>) -> Result<(), HandlerError<()>> {
         *incoming.context.count.write().await += 1;
         Ok(())
     }

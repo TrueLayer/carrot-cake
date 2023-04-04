@@ -23,4 +23,3 @@ thiserror = "1.0.20"
 uuid = { version = "1", features = ["v4", "serde"] }
 anyhow = "1.0.31"
 shutdown-handler = "0.1.0"
-truelayer-sli = { version = "0.1.10", registry = "truelayer-rustlayer" }

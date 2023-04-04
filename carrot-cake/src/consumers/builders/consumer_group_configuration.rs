@@ -12,17 +12,18 @@ const DEFAULT_PREFETCH_COUNT: u16 = 50;
 /// Group-level configuration values for a [`ConsumerGroup`](super::ConsumerGroup).
 ///
 /// Use [`ConsumerGroupConfigurationBuilder`] to build an instance of `ConsumerGroupConfiguration`.
-pub(super) struct ConsumerGroupConfiguration<Context, Factory>
+pub(super) struct ConsumerGroupConfiguration<Context, Error, Factory>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
     Factory: TransportFactory,
 {
     pub(super) transport_factory: Factory,
     pub(super) queue_name_prefix: Option<String>,
     pub(super) prefetch_count: u16,
     pub(super) context: Arc<Context>,
-    pub(super) processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<Context>>>,
-    pub(super) telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<Context>>>,
+    pub(super) processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<Context, Error>>>,
+    pub(super) telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<Context, Error>>>,
     pub(super) pre_start_hooks: Vec<Arc<dyn ConsumerPreStartHook>>,
     pub(super) exit_after: Option<usize>,
     pub(super) transient_error_hook: Arc<dyn ConsumerTransientErrorHook>,
@@ -31,16 +32,18 @@ where
 /// A builder for group-level configuration of a [`ConsumerGroup`](super::ConsumerGroup).
 ///
 /// Use [`ConsumerGroup::builder`](super::ConsumerGroup::builder) as entrypoint.
-pub struct ConsumerGroupConfigurationBuilder<Context, Factory>(
-    ConsumerGroupConfiguration<Context, Factory>,
+pub struct ConsumerGroupConfigurationBuilder<Context, Error, Factory>(
+    ConsumerGroupConfiguration<Context, Error, Factory>,
 )
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
     Factory: TransportFactory;
 
-impl<Context, Factory> ConsumerGroupConfigurationBuilder<Context, Factory>
+impl<Context, Error, Factory> ConsumerGroupConfigurationBuilder<Context, Error, Factory>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
     Factory: TransportFactory,
 {
     pub(super) fn new(transport_factory: Factory, context: Arc<Context>) -> Self {
@@ -84,7 +87,7 @@ where
     ///
     /// Check out [`ProcessingMiddleware`](crate::consumers::ProcessingMiddleware)'s documentation for more details.
     #[must_use]
-    pub fn with_processing_middleware<M: ProcessingMiddleware<Context>>(
+    pub fn with_processing_middleware<M: ProcessingMiddleware<Context, Error>>(
         self,
         middleware: M,
     ) -> Self {
@@ -108,7 +111,7 @@ where
     #[must_use]
     pub fn with_dyn_processing_middleware(
         mut self,
-        middleware: Arc<dyn ProcessingMiddleware<Context>>,
+        middleware: Arc<dyn ProcessingMiddleware<Context, Error>>,
     ) -> Self {
         self.0.processing_middleware_chain.push(middleware);
         self
@@ -118,7 +121,7 @@ where
     #[must_use]
     pub fn with_processing_middlewares<I>(mut self, middlewares: I) -> Self
     where
-        I: IntoIterator<Item = Arc<dyn ProcessingMiddleware<Context>>>,
+        I: IntoIterator<Item = Arc<dyn ProcessingMiddleware<Context, Error>>>,
     {
         self.0.processing_middleware_chain.extend(middlewares);
         self
@@ -134,7 +137,10 @@ where
     ///
     /// Check out [`TelemetryMiddleware`]'s documentation for more details.
     #[must_use]
-    pub fn with_telemetry_middleware<M: TelemetryMiddleware<Context>>(self, middleware: M) -> Self {
+    pub fn with_telemetry_middleware<M: TelemetryMiddleware<Context, Error>>(
+        self,
+        middleware: M,
+    ) -> Self {
         self.with_dyn_telemetry_middleware(Arc::new(middleware))
     }
 
@@ -155,7 +161,7 @@ where
     #[must_use]
     pub fn with_dyn_telemetry_middleware(
         mut self,
-        middleware: Arc<dyn TelemetryMiddleware<Context>>,
+        middleware: Arc<dyn TelemetryMiddleware<Context, Error>>,
     ) -> Self {
         self.0.telemetry_middleware_chain.push(middleware);
         self
@@ -165,7 +171,7 @@ where
     #[must_use]
     pub fn with_telemetry_middlewares<I>(mut self, middlewares: I) -> Self
     where
-        I: IntoIterator<Item = Arc<dyn TelemetryMiddleware<Context>>>,
+        I: IntoIterator<Item = Arc<dyn TelemetryMiddleware<Context, Error>>>,
     {
         self.0.telemetry_middleware_chain.extend(middlewares);
         self
@@ -290,8 +296,8 @@ where
     /// A phased builder prevents these oddities entirely.
     pub fn message_handler(
         self,
-        message_handler: MessageHandler<Context>,
-    ) -> ConsumerGroupBuilder<Context, Factory> {
+        message_handler: MessageHandler<Context, Error>,
+    ) -> ConsumerGroupBuilder<Context, Error, Factory> {
         let group_configuration = self.0;
         ConsumerGroupBuilder {
             group_configuration,

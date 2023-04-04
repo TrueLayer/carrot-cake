@@ -21,21 +21,32 @@ use std::future::Future;
 ///
 /// [`MessageHandler`]: crate::consumers::MessageHandler
 #[async_trait::async_trait]
-pub trait Handler<Context>: Send + Sync + 'static {
-    async fn handle(&self, incoming: Incoming<'_, Context>) -> Result<(), HandlerError>;
+pub trait Handler<Context, Error>: Send + Sync + 'static {
+    async fn handle(&self, incoming: Incoming<'_, Context>) -> Result<(), HandlerError<Error>>;
 }
 
 /// Implement the [`Handler`] trait for all Boxed handlers.
 ///
-/// E.g. Box<dyn Handler<Context>>.
-#[async_trait::async_trait]
-impl<Context, H> Handler<Context> for Box<H>
+/// E.g. Box<dyn Handler>.
+// #[async_trait::async_trait]
+impl<H, Context, Error> Handler<Context, Error> for Box<H>
 where
+    H: Handler<Context, Error> + ?Sized,
     Context: Send + Sync + 'static,
-    H: Handler<Context> + ?Sized,
+    Error: Send + Sync + 'static,
 {
-    async fn handle(&self, incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
-        H::handle(self, incoming).await
+    fn handle<'a, 'b, 'async_trait>(
+        &'a self,
+        incoming: Incoming<'b, Context>,
+    ) -> core::pin::Pin<
+        Box<dyn Future<Output = Result<(), HandlerError<Error>>> + Send + 'async_trait>,
+    >
+    where
+        'a: 'async_trait,
+        'b: 'async_trait,
+        Self: 'async_trait,
+    {
+        H::handle(self, incoming)
     }
 }
 
@@ -46,22 +57,19 @@ where
 ///
 /// When combined with the [`ClosureHandler`] type, you get a [`Handler`] that can be used
 /// by consumer groups. `MessageHandlerBuilder::handler` will automatically perform this wrapping for you.
-pub trait AsyncClosure<'a, Context>: Send + Sync + 'static {
-    type Output: Future<Output = Result<(), Self::Err>> + Send + 'a;
-    type Err: Into<HandlerError> + 'static;
+pub trait AsyncClosure<'a, Context, Error>: Send + Sync + 'static {
+    type Output: Future<Output = Result<(), HandlerError<Error>>> + Send + 'a;
     fn call(&'a self, incoming: Incoming<'a, Context>) -> Self::Output;
 }
 
 /// Implement `HandlerClosure` for all functions that match the required signature.
-impl<'a, F, Fut, Err, Context> AsyncClosure<'a, Context> for F
+impl<'a, F, Fut, Err, Context> AsyncClosure<'a, Context, Err> for F
 where
     Context: 'static,
     F: Send + Sync + 'static,
     F: Fn(Incoming<'a, Context>) -> Fut,
-    Fut: Future<Output = Result<(), Err>> + Send + 'a,
-    Err: Into<HandlerError> + 'static,
+    Fut: Future<Output = Result<(), HandlerError<Err>>> + Send + 'a,
 {
-    type Err = Err;
     type Output = Fut;
 
     fn call(&'a self, incoming: Incoming<'a, Context>) -> Self::Output {
@@ -79,13 +87,14 @@ pub struct ClosureHandler<H>(pub H);
 /// We do not require handlers to return a [`HandlerError`] directly - it is enough for them to
 /// return an error type that can be converted to [`HandlerError`]
 #[async_trait::async_trait]
-impl<Context, F> Handler<Context> for ClosureHandler<F>
+impl<Context, Error, F> Handler<Context, Error> for ClosureHandler<F>
 where
     Context: Send + Sync + 'static,
-    F: for<'a> AsyncClosure<'a, Context>,
+    Error: Send + Sync + 'static,
+    F: for<'a> AsyncClosure<'a, Context, Error>,
 {
-    async fn handle(&self, incoming: Incoming<'_, Context>) -> Result<(), HandlerError> {
-        self.0.call(incoming).await.map_err(|e| e.into())
+    async fn handle(&self, incoming: Incoming<'_, Context>) -> Result<(), HandlerError<Error>> {
+        self.0.call(incoming).await
     }
 }
 
@@ -96,7 +105,7 @@ mod test {
     use lapin::message::Delivery;
     use std::sync::Arc;
 
-    async fn handler(_incoming: Incoming<'_, ()>) -> Result<(), HandlerError> {
+    async fn handler(_incoming: Incoming<'_, ()>) -> Result<(), HandlerError<()>> {
         Ok(())
     }
 
@@ -104,11 +113,11 @@ mod test {
     // calls down the chain and does not recurse.
     #[tokio::test]
     async fn test_boxed_handler() {
-        let handler: Box<dyn Handler<()>> = Box::new(ClosureHandler(handler));
+        let handler: Box<dyn Handler<(), ()>> = Box::new(ClosureHandler(handler));
         check(handler).await;
     }
 
-    async fn check(h: impl Handler<()>) {
+    async fn check(h: impl Handler<(), ()>) {
         let message = Incoming {
             context: Arc::new(()),
             message: &Delivery {

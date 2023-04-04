@@ -31,28 +31,30 @@ use std::sync::Arc;
 /// (e.g. [`MessageHandlerBuilder::with_processing_middleware`] or [`MessageHandlerBuilder::with_telemetry_middleware`]).
 ///
 /// [`ConsumerGroup`]: super::ConsumerGroup
-pub struct MessageHandler<Context>
+pub struct MessageHandler<Context, Error>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
 {
     pub(super) queue_name: String,
     pub(super) prefetch_count_override: Option<u16>,
-    pub(super) processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<Context>>>,
-    pub(super) telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<Context>>>,
+    pub(super) processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<Context, Error>>>,
+    pub(super) telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<Context, Error>>>,
     pub(super) pre_start_hooks: Vec<Arc<dyn ConsumerPreStartHook>>,
     pub(super) priority: Option<i32>,
     pub(super) transient_error_hook: Option<Arc<dyn ConsumerTransientErrorHook>>,
-    pub(super) handler: Arc<dyn Handler<Context>>,
+    pub(super) handler: Arc<dyn Handler<Context, Error>>,
 }
 
-impl<Context> MessageHandler<Context>
+impl<Context, Error> MessageHandler<Context, Error>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
 {
     /// Start building a [`MessageHandler`].
     ///
     /// You need to provide the name of the queue you want to consume messages from.
-    pub fn builder<T: Into<String>>(queue_name: T) -> MessageHandlerBuilder<Context> {
+    pub fn builder<T: Into<String>>(queue_name: T) -> MessageHandlerBuilder<Context, Error> {
         MessageHandlerBuilder::new(queue_name.into())
     }
 }
@@ -60,22 +62,24 @@ where
 /// A builder to compose a [`MessageHandler`] with a fluent API.
 ///
 /// Use [`MessageHandler::builder`] as entrypoint.
-pub struct MessageHandlerBuilder<Context>
+pub struct MessageHandlerBuilder<Context, Error>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
 {
     queue_name: String,
     prefetch_count_override: Option<u16>,
-    processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<Context>>>,
-    telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<Context>>>,
+    processing_middleware_chain: Vec<Arc<dyn ProcessingMiddleware<Context, Error>>>,
+    telemetry_middleware_chain: Vec<Arc<dyn TelemetryMiddleware<Context, Error>>>,
     pre_start_hooks: Vec<Arc<dyn ConsumerPreStartHook>>,
     transient_error_hook: Option<Arc<dyn ConsumerTransientErrorHook>>,
     priority: Option<i32>,
 }
 
-impl<Context> MessageHandlerBuilder<Context>
+impl<Context, Error> MessageHandlerBuilder<Context, Error>
 where
     Context: Send + Sync + 'static,
+    Error: Send + Sync + 'static,
 {
     pub(super) fn new<T: Into<String>>(queue_name: T) -> Self {
         Self {
@@ -109,7 +113,7 @@ where
     ///
     /// [`ConsumerGroup`]: super::ConsumerGroup
     #[must_use]
-    pub fn with_processing_middleware<M: ProcessingMiddleware<Context>>(
+    pub fn with_processing_middleware<M: ProcessingMiddleware<Context, Error>>(
         self,
         middleware: M,
     ) -> Self {
@@ -120,7 +124,7 @@ where
     #[must_use]
     pub fn with_dyn_processing_middleware(
         mut self,
-        middleware: Arc<dyn ProcessingMiddleware<Context>>,
+        middleware: Arc<dyn ProcessingMiddleware<Context, Error>>,
     ) -> Self {
         self.processing_middleware_chain.push(middleware);
         self
@@ -130,7 +134,7 @@ where
     #[must_use]
     pub fn with_processing_middlewares<I>(mut self, middlewares: I) -> Self
     where
-        I: IntoIterator<Item = Arc<dyn ProcessingMiddleware<Context>>>,
+        I: IntoIterator<Item = Arc<dyn ProcessingMiddleware<Context, Error>>>,
     {
         self.processing_middleware_chain.extend(middlewares);
         self
@@ -152,7 +156,10 @@ where
     ///
     /// [`ConsumerGroup`]: super::ConsumerGroup
     #[must_use]
-    pub fn with_telemetry_middleware<M: TelemetryMiddleware<Context>>(self, middleware: M) -> Self {
+    pub fn with_telemetry_middleware<M: TelemetryMiddleware<Context, Error>>(
+        self,
+        middleware: M,
+    ) -> Self {
         self.with_dyn_telemetry_middleware(Arc::new(middleware))
     }
 
@@ -160,7 +167,7 @@ where
     #[must_use]
     pub fn with_dyn_telemetry_middleware(
         mut self,
-        middleware: Arc<dyn TelemetryMiddleware<Context>>,
+        middleware: Arc<dyn TelemetryMiddleware<Context, Error>>,
     ) -> Self {
         self.telemetry_middleware_chain.push(middleware);
         self
@@ -170,7 +177,7 @@ where
     #[must_use]
     pub fn with_telemetry_middlewares<I>(mut self, middlewares: I) -> Self
     where
-        I: IntoIterator<Item = Arc<dyn TelemetryMiddleware<Context>>>,
+        I: IntoIterator<Item = Arc<dyn TelemetryMiddleware<Context, Error>>>,
     {
         self.telemetry_middleware_chain.extend(middlewares);
         self
@@ -291,9 +298,9 @@ where
     /// the actual business logic associated with the processing of a message.
     ///
     /// [`HandlerError`]: crate::consumers::HandlerError
-    pub fn handler<H>(self, handler: H) -> MessageHandler<Context>
+    pub fn handler<H>(self, handler: H) -> MessageHandler<Context, Error>
     where
-        H: for<'a> AsyncClosure<'a, Context>,
+        H: for<'a> AsyncClosure<'a, Context, Error>,
     {
         self.raw_handler(ClosureHandler(handler))
     }
@@ -306,7 +313,10 @@ where
     ///
     /// Passing in the handler finalises the `MessageHandler` construction - you will
     /// not be able to register additional middlewares or hooks after having specified the handler.
-    pub fn raw_handler<H: Handler<Context>>(self, handler: H) -> MessageHandler<Context> {
+    pub fn raw_handler<H: Handler<Context, Error>>(
+        self,
+        handler: H,
+    ) -> MessageHandler<Context, Error> {
         self.raw_arc_handler(Arc::new(handler))
     }
 
@@ -318,7 +328,10 @@ where
     ///
     /// Passing in the handler finalises the `MessageHandler` construction - you will
     /// not be able to register additional middlewares or hooks after having specified the handler.
-    pub fn raw_arc_handler(self, handler: Arc<dyn Handler<Context>>) -> MessageHandler<Context> {
+    pub fn raw_arc_handler(
+        self,
+        handler: Arc<dyn Handler<Context, Error>>,
+    ) -> MessageHandler<Context, Error> {
         let Self {
             queue_name,
             prefetch_count_override,

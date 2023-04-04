@@ -1,2 +1,0 @@
-[registries]
-truelayer-rustlayer = { index = "https://dl.cloudsmith.io/basic/truelayer/rustlayer/cargo/index.git" }
