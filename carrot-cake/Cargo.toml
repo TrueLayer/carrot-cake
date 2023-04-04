@@ -10,16 +10,16 @@ categories = ["database"]
 readme = "../README.md"
 
 [dependencies]
-carrot-cake-amqp = { version = "0.1.0", path = "../carrot-cake-amqp" }
-carrot-cake-amqp-pool = { version = "0.1.0", path = "../carrot-cake-amqp-pool" }
-task-local-extensions = { version = "0.1.3" }
-lapin = "2.0"
-tokio = { version = "1", features = ["full"] }
+carrot-cake-amqp = { version = "0.1", path = "../carrot-cake-amqp" }
+carrot-cake-amqp-pool = { version = "0.1", path = "../carrot-cake-amqp-pool" }
+task-local-extensions = { version = "0.1" }
+lapin = "2.1"
+tokio = { version = "1.27" }
 amq-protocol-types = "7.0"
-futures-util = "0.3.5"
-tracing = { version = "0.1.17", features = ["log", "attributes"] }
-async-trait = "0.1.35"
-thiserror = "1.0.20"
-uuid = { version = "1", features = ["v4", "serde"] }
-anyhow = "1.0.31"
-shutdown-handler = "0.1.0"
+futures-util = "0.3"
+tracing = { version = "0.1", features = ["log", "attributes"] }
+async-trait = "0.1"
+thiserror = "1.0"
+uuid = { version = "1.3", features = ["v4", "serde"] }
+anyhow = "1.0"
+shutdown-handler = "0.1"

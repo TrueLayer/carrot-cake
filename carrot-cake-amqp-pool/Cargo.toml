@@ -10,12 +10,12 @@ categories = ["database"]
 readme = "../README.md"
 
 [dependencies]
-carrot-cake-amqp = { version = "0.1.0", path = "../carrot-cake-amqp" }
+carrot-cake-amqp = { version = "0.1", path = "../carrot-cake-amqp" }
 deadpool = { version = "0.9", default-features = false, features = ["managed"] }
-anyhow = "1.0.38"
-async-trait = "0.1.4"
-thiserror = "1.0.30"
-lapin = "2"
+anyhow = "1.0"
+async-trait = "0.1"
+thiserror = "1.0"
+lapin = "2.1"
 
 [dev-dependencies]
 serde_yaml = "0.9"
