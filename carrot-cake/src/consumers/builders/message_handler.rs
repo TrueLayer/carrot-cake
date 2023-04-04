@@ -320,7 +320,7 @@ where
         self.raw_arc_handler(Arc::new(handler))
     }
 
-    /// The raw Arc<handler> used to process incoming messages. Prefer `handler` if you
+    /// The raw `Arc<handler>` used to process incoming messages. Prefer `handler` if you
     /// only want to register a function handler. This method is provided for more
     /// complex implementation requirements
     ///
