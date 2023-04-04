@@ -63,12 +63,12 @@ pub trait AsyncClosure<'a, Context, Error>: Send + Sync + 'static {
 }
 
 /// Implement `HandlerClosure` for all functions that match the required signature.
-impl<'a, F, Fut, Err, Context> AsyncClosure<'a, Context, Err> for F
+impl<'a, F, Fut, Error, Context> AsyncClosure<'a, Context, Error> for F
 where
     Context: 'static,
     F: Send + Sync + 'static,
     F: Fn(Incoming<'a, Context>) -> Fut,
-    Fut: Future<Output = Result<(), HandlerError<Err>>> + Send + 'a,
+    Fut: Future<Output = Result<(), HandlerError<Error>>> + Send + 'a,
 {
     type Output = Fut;
 

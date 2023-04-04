@@ -87,13 +87,13 @@ pub struct MessageProcessing<'a, Context, Error> {
 /// [`ProcessingOutcome`] in [`TelemetryMiddleware::handle`]. The telemetry middleware is forced
 /// to propagate the outcome returned by [`MessageProcessing`]
 #[derive(Debug)]
-pub struct ProcessingOutcome<E> {
-    outcome: Result<(), ProcessingError<E>>,
+pub struct ProcessingOutcome<Error> {
+    outcome: Result<(), ProcessingError<Error>>,
     broker_action: BrokerAction,
 }
 
-impl<E> ProcessingOutcome<E> {
-    pub fn result(&self) -> &Result<(), ProcessingError<E>> {
+impl<Error> ProcessingOutcome<Error> {
+    pub fn result(&self) -> &Result<(), ProcessingError<Error>> {
         &self.outcome
     }
 
@@ -112,10 +112,10 @@ impl<E> ProcessingOutcome<E> {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum ProcessingError<E> {
+pub enum ProcessingError<Error> {
     /// An error was encountered while processing the message.
     #[error("An error was encountered while processing of the message.")]
-    HandlerError(HandlerError<E>),
+    HandlerError(HandlerError<Error>),
     /// Failed to ack message.
     #[error("Failed to ack message.")]
     AckError(#[source] anyhow::Error),
@@ -125,7 +125,7 @@ pub enum ProcessingError<E> {
         #[source]
         error: anyhow::Error,
         /// The processing error that led us to try to tell the AMQP broker to nack the message.
-        handler_error: HandlerError<E>,
+        handler_error: HandlerError<Error>,
     },
 }
 
@@ -206,10 +206,10 @@ enum BrokerAction {
 /// Based on the outcome of processing communicate with the AMQP broker to ack/nack/reject the message.
 /// If processing failed, it takes care to determine (via the transient error hook) if the message
 /// should be requeued (nack), requeued with ack (ack) or not (reject).
-async fn ack_or_nack<E>(
+async fn ack_or_nack<Error>(
     transient_error_hook: Arc<dyn ConsumerTransientErrorHook>,
     message: &Delivery,
-    outcome: &Result<(), HandlerError<E>>,
+    outcome: &Result<(), HandlerError<Error>>,
 ) -> Result<BrokerAction, InnerBrokerError> {
     match outcome {
         Ok(_) => {
