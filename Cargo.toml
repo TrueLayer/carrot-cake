@@ -1,0 +1,6 @@
+[workspace]
+members = [
+	"carrot-cake", 
+	"carrot-cake-amqp",
+	"carrot-cake-amqp-pool",
+	]

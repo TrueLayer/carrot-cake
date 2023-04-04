@@ -1,0 +1,22 @@
+[package]
+name = "carrot-cake-amqp-pool"
+version = "0.1.0"
+edition = "2021"
+description = "An a-peeling pub/sub framework"
+repository = "https://github.com/TrueLayer/reqwest-middleware"
+license = "MIT OR Apache-2.0"
+keywords = ["amqp", "rabbitmq", "async"]
+categories = ["database"]
+readme = "../README.md"
+
+[dependencies]
+carrot-cake-amqp = { version = "0.1.0", path = "../carrot-cake-amqp" }
+deadpool = { version = "0.9", default-features = false, features = ["managed"] }
+anyhow = "1.0.38"
+async-trait = "0.1.4"
+thiserror = "1.0.30"
+lapin = "2"
+
+[dev-dependencies]
+serde_yaml = "0.9"
+tokio = "1"

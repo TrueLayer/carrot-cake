@@ -1,0 +1,29 @@
+[package]
+name = "carrot-cake-amqp"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/TrueLayer/reqwest-middleware"
+license = "MIT OR Apache-2.0"
+keywords = ["amqp", "rabbitmq", "async"]
+categories = ["database"]
+readme = "../README.md"
+
+[dependencies]
+lapin = { version = "2", features = ["native-tls"] }
+tokio-executor-trait = "2.1"
+tracing = { version = "0.1.22", features = ["log", "attributes"] }
+anyhow = "1.0.31"
+thiserror = "1.0.20"
+cookie-factory = "0.3.2"
+serde = { version = "1", features = ["derive"]}
+native-tls = "0.2.4"
+serde-aux  = "4"
+tokio = { version = "1", features = ["full"] }
+tracing-error = "0.1.2"
+async-trait = "0.1.5"
+
+[dev-dependencies]
+fake = "2.2.3"
+config = "0.13"
+uuid = { version = "1", features = ["v4", "serde"] }
+serde_json = { version = "1", features = ["preserve_order"] }
