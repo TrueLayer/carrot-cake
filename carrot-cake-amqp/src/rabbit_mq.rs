@@ -552,7 +552,7 @@ mod tests {
                 .unwrap_or_else(|| env::var("APP_ENVIRONMENT").unwrap_or_else(|_| "test".into()));
 
             // Add in environment-specific settings (optional)
-            let path = base_path.join(&format!("configuration/{}.yml", environment));
+            let path = base_path.join(format!("configuration/{}.yml", environment));
             let s = s.add_source(File::from(path).required(false));
 
             // Add in settings from environment variables (with a prefix of APP and '__' as separator)
