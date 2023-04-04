@@ -27,7 +27,7 @@ pub trait Handler<Context, Error>: Send + Sync + 'static {
 
 /// Implement the [`Handler`] trait for all Boxed handlers.
 ///
-/// E.g. Box<dyn Handler>.
+/// E.g. `Box<dyn Handler>`.
 // #[async_trait::async_trait]
 impl<H, Context, Error> Handler<Context, Error> for Box<H>
 where

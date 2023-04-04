@@ -270,8 +270,8 @@ where
     /// ```no_run
     /// # use std::sync::Arc;
     /// # use carrot_cake::consumers::{MessageHandlerBuilder, ConsumerTransientErrorHook};
-    /// # let message_handler_builder: MessageHandlerBuilder<()> = unimplemented!();
-    /// # let other_message_handler_builder: MessageHandlerBuilder<()> = unimplemented!();
+    /// # let message_handler_builder: MessageHandlerBuilder<(), ()> = unimplemented!();
+    /// # let other_message_handler_builder: MessageHandlerBuilder<(), ()> = unimplemented!();
     /// let hook: Arc<dyn ConsumerTransientErrorHook>; // some dynamic shared error hook
     /// # hook = unimplemented!();
     ///
@@ -320,7 +320,7 @@ where
         self.raw_arc_handler(Arc::new(handler))
     }
 
-    /// The raw Arc<handler> used to process incoming messages. Prefer `handler` if you
+    /// The raw `Arc<handler>` used to process incoming messages. Prefer `handler` if you
     /// only want to register a function handler. This method is provided for more
     /// complex implementation requirements
     ///
