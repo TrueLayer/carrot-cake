@@ -6,7 +6,7 @@
 //! parts of the codebase without having to explicitly pass it around as an argument.
 //! It keeps it "orthogonal" to the functional requirements.
 //!
-//! # Common usecases
+//! # Common use cases
 //!
 //! ## Measuring elapsed time
 //!

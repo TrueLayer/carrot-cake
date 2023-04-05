@@ -183,7 +183,7 @@ impl<C: Send + Sync + 'static, E: Send + Sync + 'static> Consumer<C, E> {
     /// queue.
     ///
     /// `run_until_shutdown` exits if the consumer fails with an error (e.g. the channel is closed
-    /// or the connection with RabbitMq is lost) or if a shutdown signal is recieved.
+    /// or the connection with RabbitMq is lost) or if a shutdown signal is received.
     #[tracing::instrument(skip_all, name = "consumer_run", fields(queue_name = %self.queue_name))]
     pub async fn run_until_shutdown(
         self,

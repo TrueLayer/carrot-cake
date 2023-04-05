@@ -17,14 +17,6 @@ pub use lapin::types as protocol_types;
 
 /// Set the value for a header inside a collection of AMQP properties.
 ///
-/// # Implementation notes
-///
-/// The current version is wasteful - we are cloning all the headers, but `lapin` does not allow us
-/// to do any better. We consume the `properties` input to make sure the caller does not re-use
-/// it under the impression that it has been mutated to add the new header.
-///
-/// We should submit a PR upstream to get mutable access to headers from AMQPProperties.
-///
 /// # Example
 ///
 /// ```rust
@@ -51,11 +43,7 @@ pub fn set_header(
     header_name: &str,
     header_value: AMQPValue,
 ) -> AMQPProperties {
-    let mut headers = properties
-        .headers()
-        .as_ref()
-        .map(|h| h.to_owned())
-        .unwrap_or_default();
+    let mut headers = properties.headers().as_ref().cloned().unwrap_or_default();
     headers.insert(header_name.into(), header_value);
     properties.with_headers(headers)
 }

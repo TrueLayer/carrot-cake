@@ -13,7 +13,7 @@ use std::future::Future;
 /// This decouples the low-level interactions with the message broker and the retry logic from
 /// the actual business logic associated with the processing of a message.
 ///
-/// # Implementors
+/// # Implementers
 ///
 /// While you can implement `Handler` for a struct or enum, 99% of the time you will be relying
 /// on our implementation of `Handle` for async functions that have a matching signature -

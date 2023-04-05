@@ -74,6 +74,7 @@ where
 
     /// Configure the prefetch count of consumers in the group.
     /// If not configured, the prefetch count is set to a default value of 50.
+    #[must_use]
     pub fn with_prefetch_count(mut self, prefetch_count: u16) -> Self {
         self.0.prefetch_count = prefetch_count;
         self
@@ -189,32 +190,13 @@ where
     /// exited, that a certain number of messages have been processed and you can start performing
     /// your assertions around the side-effects produced by said processing.
     ///
-    /// See [the integration test example](https://github.com/TrueLayer/rusty-bunny/tree/main/src/pubsub/examples)
+    /// See [the integration test example](https://github.com/TrueLayer/carrot-cake/tree/main/carrot-cake/examples)
     /// as a reference implementation.
     ///
     /// [`ConsumerGroup`]: super::ConsumerGroup
     #[must_use]
     pub fn exit_after(mut self, max_n_messages: usize) -> Self {
         self.0.exit_after = Some(max_n_messages);
-        self
-    }
-
-    /// Pre-start hooks are executed _before_ consumers start pulling messages from queues.
-    /// Pre-start hooks are used to execute setup logic for resources against the message broker -
-    /// e.g. create exchanges, bind queues, etc.
-    ///
-    /// # Note
-    ///   This has been deprecated in favor of [`ConsumerGroupConfigurationBuilder::with_pre_start_hook`] and
-    ///   [`ConsumerGroupConfigurationBuilder::with_pre_start_hooks`] to support adding multiple hooks.
-    ///
-    /// Check out [`ConsumerPreStartHook`](crate::consumers::ConsumerPreStartHook)'s documentation
-    /// for more details.
-    ///
-    /// By default, no pre-start logic is executed unless one or more pre-start hooks are explicitly specified.
-    #[deprecated(note = "Use 'with_pre_start_hook' instead")]
-    #[must_use]
-    pub fn pre_start_hook<H: ConsumerPreStartHook>(mut self, hook: H) -> Self {
-        self.0.pre_start_hooks.push(Arc::new(hook));
         self
     }
 

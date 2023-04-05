@@ -27,7 +27,7 @@ use crate::rabbit_mq::RabbitMqPublishError;
 ///
 /// # Examples
 ///
-/// Check the [`publishers` example on GitHub](https://github.com/TrueLayer/rusty-bunny/tree/main/src/pubsub/examples)
+/// Check the [`publishers` example on GitHub](https://github.com/TrueLayer/carrot-cake/tree/main/carrot-cake/examples)
 /// to see `Publisher` in action.
 pub struct Publisher<const PUBLISHER_CONFIRMATION: bool> {
     /// Channel pool for the underlying AMQP channel.
@@ -194,18 +194,15 @@ fn inject_amqp_properties(mut envelope: MessageEnvelope) -> MessageEnvelope {
         .map(|ct| ct.as_secs());
 
     let props = envelope.properties.unwrap_or_default();
-    let props = match current_timestamp {
-        Some(ct) => {
-            let ts = props.timestamp().to_owned();
-            props.with_timestamp(ts.unwrap_or(ct))
-        }
-        None => {
-            warn!("System time is before 1970");
-            props
-        }
+    let props = if let Some(ct) = current_timestamp {
+        let ts = *props.timestamp();
+        props.with_timestamp(ts.unwrap_or(ct))
+    } else {
+        warn!("System time is before 1970");
+        props
     };
 
-    let message_id = props.message_id().to_owned();
+    let message_id = props.message_id().clone();
     envelope.properties = Some(
         props.with_message_id(message_id.unwrap_or_else(|| Uuid::new_v4().to_string().into())),
     );

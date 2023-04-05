@@ -28,7 +28,7 @@ impl<H: ConsumerPreStartHook> ConsumerPreStartHook for PriorityQueueBinder<H> {
     ) -> Result<(), anyhow::Error> {
         args.insert(
             "x-max-priority".into(),
-            AMQPValue::ShortShortInt(self.priority as _),
+            AMQPValue::ShortShortUInt(self.priority),
         );
 
         self.hook.run(channel, queue_name, args).await

@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 /// Middlewares to execute logic before and after the message handler function.
 ///
-/// # Usecase
+/// # Use case
 ///
 /// The main purpose of processing middlewares is to extract and centralise common non-business logic
 /// that might impact the outcome of the processing.  
@@ -29,15 +29,6 @@ use std::sync::Arc;
 ///
 /// If yes, use a `ProcessingMiddleware`.
 /// If no, use a [`TelemetryMiddleware`].
-///
-/// # Plug-ang-play middlewares
-///
-/// There is a rich ecosystem of ready-to-go middlewares for message consumers:
-///
-/// - [`truelayer-pubsub-observability`](https://github.com/TrueLayer/rust-pubsub-observability/)
-///   provides telemetry middlewares for logging, collecting metrics and distributed tracing;
-/// - [`amqp-auth`](https://github.com/TrueLayer/rust-amqp-auth) provides a processing middleware
-///   to verify the signature on an incoming message.
 ///
 /// [record it in the message extensions]: crate::consumers::get_message_local_item
 /// [`TelemetryMiddleware`]: crate::consumers::TelemetryMiddleware

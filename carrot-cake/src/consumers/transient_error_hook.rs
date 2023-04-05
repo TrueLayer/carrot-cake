@@ -22,8 +22,6 @@ use super::incoming_message::Delivery;
 /// You can find two ready-to-go hooks in the [`hooks::transient_error`] module -
 /// [`AlwaysRequeue`] and [`NeverRequeue`].
 ///
-/// A more interesting implementation is provided in [`rust-amqp-retry`](https://github.com/TrueLayer/rusty-bunny/tree/main/src/amqp-retry)
-/// to retry messages with a delay.
 ///
 /// [`ErrorType::Transient`]: crate::consumers::ErrorType::Transient
 /// [`ErrorType::Fatal`]: crate::consumers::ErrorType::Fatal

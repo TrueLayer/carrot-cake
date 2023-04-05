@@ -1,4 +1,4 @@
-//! `truelayer-amqp-pool` provides channel pooling for a [Channel][carrot_cake_amqp::rabbit_mq::Channel].
+//! `carrot-cake-amqp-pool` provides channel pooling for a [Channel][carrot_cake_amqp::rabbit_mq::Channel].
 //!
 //! This library provides two key guarantees:
 //! - Disposing of broken channels and recreating new ones on-demand.

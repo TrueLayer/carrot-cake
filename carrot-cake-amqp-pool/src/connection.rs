@@ -43,7 +43,7 @@ impl ConnectionManager {
         ConnectionPool::builder(self)
             .max_size(max_n_connections)
             .build()
-            .expect("could not build connection pool. This is a bug with truelayer-amqp-pool")
+            .expect("could not build connection pool. This is a bug with carrot-cake-amqp-pool")
     }
 }
 

@@ -12,7 +12,7 @@ use std::sync::Arc;
 ///
 /// # Learn by doing
 ///
-/// Check out the [`consumer` example on GitHub](https://github.com/TrueLayer/rusty-bunny/tree/main/src/pubsub/examples)
+/// Check out the [`consumer` example on GitHub](https://github.com/TrueLayer/carrot-cake/tree/main/carrot-cake/examples)
 /// to see `MessageHandler` in action.
 ///
 /// The example showcases most of the available knobs and what they are used for.
@@ -25,7 +25,7 @@ use std::sync::Arc;
 /// It is possible to:
 ///
 /// - override some group-level configuration for a specific
-/// message handler (see [`MessageHandlerBuilder::pre_start_hook`]
+/// message handler (see [`MessageHandlerBuilder::with_pre_start_hook`]
 /// and [`MessageHandlerBuilder::transient_error_hook`])
 /// - add on top of what the group-level configuration provides
 /// (e.g. [`MessageHandlerBuilder::with_processing_middleware`] or [`MessageHandlerBuilder::with_telemetry_middleware`]).
@@ -96,6 +96,7 @@ where
     /// Configure the prefetch count of the handler.
     /// If not configured, the handler inherits the prefetch count
     /// configured at the consumer group level.
+    #[must_use]
     pub fn with_prefetch_count(mut self, prefetch_count: u16) -> Self {
         self.prefetch_count_override = Some(prefetch_count);
         self
@@ -180,28 +181,6 @@ where
         I: IntoIterator<Item = Arc<dyn TelemetryMiddleware<Context, Error>>>,
     {
         self.telemetry_middleware_chain.extend(middlewares);
-        self
-    }
-
-    /// Pre-start hooks are executed _before_ consumers start pulling messages from queues.
-    /// Pre-start hooks are used to execute setup logic for resources against the message broker -
-    /// e.g. create exchanges, bind queues, etc.
-    ///
-    /// # Note
-    ///   This has been deprecated in favor of [`MessageHandlerBuilder::with_pre_start_hook`] and
-    ///   [`MessageHandlerBuilder::with_pre_start_hooks`] to support adding multiple hooks.
-    ///
-    /// Check out [`ConsumerPreStartHook`](crate::consumers::ConsumerPreStartHook)'s documentation
-    /// for more details.
-    ///
-    /// If no pre-start hook is specified at the [`MessageHandler`] level, the hook
-    /// specified at the [`ConsumerGroup`] level is executed.
-    ///
-    /// [`ConsumerGroup`]: super::ConsumerGroup
-    #[deprecated(note = "Use 'with_pre_start_hook' instead")]
-    #[must_use]
-    pub fn pre_start_hook<H: ConsumerPreStartHook>(mut self, hook: H) -> Self {
-        self.pre_start_hooks.push(Arc::new(hook));
         self
     }
 
