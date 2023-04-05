@@ -9,7 +9,6 @@ use super::ExchangeBuilder;
 
 /// Pre-start hook wraps another pre-start hook with a [dead letter exchange](https://www.rabbitmq.com/dlx.html),
 ///
-/// following the [AMQP Requeue conventions](https://paper.dropbox.com/doc/Resolving-Dead-lettered-Messages--BgdxHQwSjzFJLGisq6wzR0HfAQ-bN7MrtadEAjC0VJu6GosE).
 /// Specifically, it creates the queue `<queue_name>.deadletter` that is bound to the fanout exchange `<queue_name>.deadletter`
 /// and marks `<queue_name>.deadletter` as the dead letter exchange for queue.
 ///
