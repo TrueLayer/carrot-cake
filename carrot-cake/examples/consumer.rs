@@ -61,7 +61,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // when the processing of an incoming message fails with an error classified as transient
         // - e.g. retryable.
         // We are using `NeverRequeue` - nack the message with the broker and do not requeue.
-        // Check `carrot-cake-amqp-retry` for more advanced retry logic for transient failures.
         .transient_error_hook(NeverRequeue)
         // You can add middleware to inject logic before and after the handler logic.
         // Middlewares are executed in the order they are registered: the first registered
