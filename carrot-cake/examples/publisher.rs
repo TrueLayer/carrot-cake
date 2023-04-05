@@ -41,8 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build()?;
 
     // We have a fluent API to assemble our publishers step-by-step.
-    // You can also add middlewares to your publishers - check out `rust-amqp-auth` and
-    // `rust-pubsub-observability` for some examples.
+    // You can also add middlewares to your publishers
     let publisher = Publisher::builder(channel_pool)
         // Timeout on the publishing operation.
         .publish_timeout(std::time::Duration::from_secs(3))

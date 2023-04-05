@@ -81,7 +81,6 @@ impl TransportFactory for TransportPool {
     /// very common to open a new channel per thread/process and not share
     /// channels between them.
     /// See [rabbitmq channel docs](https://www.rabbitmq.com/channels.html).
-    /// See also this [PR](https://github.com/TrueLayer/rust-amqp-pool/pull/11)
     type Connection = Object<ConnectionManager>;
     type ChannelWithConfirmation = Box<Channel<WITH_PUBLISHER_CONFIRMATION>>;
     type ChannelWithoutConfirmation = Box<Channel<WITHOUT_PUBLISHER_CONFIRMATION>>;

@@ -17,7 +17,7 @@ use std::sync::Arc;
 ///
 /// # Learn by doing
 ///
-/// Check out the [`consumer` example on GitHub](https://github.com/TrueLayer/rusty-bunny/tree/main/src/pubsub/examples)
+/// Check out the [`consumer` example on GitHub](https://github.com/TrueLayer/carrot-cake/tree/main/carrot-cake/examples)
 /// to see `ConsumerGroup` in action.
 ///
 /// The example showcases most of the available knobs and what they are used for.

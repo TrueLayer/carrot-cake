@@ -12,7 +12,7 @@ use std::sync::Arc;
 ///
 /// # Learn by doing
 ///
-/// Check out the [`consumer` example on GitHub](https://github.com/TrueLayer/rusty-bunny/tree/main/src/pubsub/examples)
+/// Check out the [`consumer` example on GitHub](https://github.com/TrueLayer/carrot-cake/tree/main/carrot-cake/examples)
 /// to see `MessageHandler` in action.
 ///
 /// The example showcases most of the available knobs and what they are used for.
@@ -25,7 +25,7 @@ use std::sync::Arc;
 /// It is possible to:
 ///
 /// - override some group-level configuration for a specific
-/// message handler (see [`MessageHandlerBuilder::pre_start_hook`]
+/// message handler (see [`MessageHandlerBuilder::with_pre_start_hook`]
 /// and [`MessageHandlerBuilder::transient_error_hook`])
 /// - add on top of what the group-level configuration provides
 /// (e.g. [`MessageHandlerBuilder::with_processing_middleware`] or [`MessageHandlerBuilder::with_telemetry_middleware`]).

@@ -1,9 +1,6 @@
 use std::fmt;
 
 /// The error type returned by message handlers.
-///
-/// It contains all the information we need for our observability needs, both in terms of
-/// logging and metrics.
 #[derive(Debug)]
 pub struct HandlerError<E> {
     /// The underlying error type returned by the message handler.

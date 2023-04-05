@@ -27,7 +27,7 @@ use crate::rabbit_mq::RabbitMqPublishError;
 ///
 /// # Examples
 ///
-/// Check the [`publishers` example on GitHub](https://github.com/TrueLayer/rusty-bunny/tree/main/src/pubsub/examples)
+/// Check the [`publishers` example on GitHub](https://github.com/TrueLayer/carrot-cake/tree/main/carrot-cake/examples)
 /// to see `Publisher` in action.
 pub struct Publisher<const PUBLISHER_CONFIRMATION: bool> {
     /// Channel pool for the underlying AMQP channel.

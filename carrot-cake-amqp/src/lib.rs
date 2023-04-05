@@ -1,6 +1,6 @@
-//! `truelayer-amqp` is a wrapper on top of [`lapin`], our AMQP client.
+//! `carrot-cake-amqp` is a wrapper on top of [`lapin`], our AMQP client.
 //!
-//! `truelayer-amqp` provides:
+//! `carrot-cake-amqp` provides:
 //! - (strongly-typed) abstractions to work with channels and connections (see the [`rabbit_mq`] module);
 //! - convenient methods to manipulate and (de)serialize headers (see the [`amqp`] module);
 //! - [`RabbitMqSettings`], to hold the required parameters to connect to a RabbitMq broker;

@@ -190,7 +190,7 @@ where
     /// exited, that a certain number of messages have been processed and you can start performing
     /// your assertions around the side-effects produced by said processing.
     ///
-    /// See [the integration test example](https://github.com/TrueLayer/rusty-bunny/tree/main/src/pubsub/examples)
+    /// See [the integration test example](https://github.com/TrueLayer/carrot-cake/tree/main/carrot-cake/examples)
     /// as a reference implementation.
     ///
     /// [`ConsumerGroup`]: super::ConsumerGroup

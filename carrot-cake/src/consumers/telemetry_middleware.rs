@@ -35,15 +35,6 @@ use super::incoming_message::Delivery;
 /// If yes, use a [`ProcessingMiddleware`].
 /// If no, use a `TelemetryMiddleware`.
 ///
-/// # Plug-ang-play middlewares
-///
-/// There is a rich ecosystem of ready-to-go middlewares for message consumers:
-///
-/// - [`truelayer-pubsub-observability`](https://github.com/TrueLayer/rusty-bunny/tree/main/src/pubsub-observability/)
-///   provides telemetry middlewares for logging, collecting metrics and distributed tracing;
-/// - [`amqp-auth`](https://github.com/TrueLayer//rusty-bunny/tree/main/src/amqp-auth) provides a processing middleware
-///   to verify the signature on an incoming message.
-///
 /// [record it in the message extensions]: crate::consumers::get_message_local_item
 /// [Extract information recorded in the message extensions]: crate::consumers::set_message_local_item
 /// [`ProcessingMiddleware`]: crate::consumers::ProcessingMiddleware

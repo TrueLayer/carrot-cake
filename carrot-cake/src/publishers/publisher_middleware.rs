@@ -19,15 +19,6 @@ use task_local_extensions::Extensions;
 /// `extensions` can be used to store values that are needed in this middleware on the way
 /// back, after having called [`Next::run`], or should be shared with other middlewares downstream.
 ///
-/// # Plug-ang-play middlewares
-///
-/// There is a rich ecosystem of ready-to-go middlewares for message publishers:
-///
-/// - [`truelayer-pubsub-observability`](https://github.com/TrueLayer/rusty-bunny/tree/main/src/pubsub-observability/)
-///   provides middlewares to propagate OpenTelemetry headers;
-/// - [`amqp-auth`](https://github.com/TrueLayer/rusty-bunny/tree/main/src/amqp-auth) provides a middleware to sign a
-///   message before publishing it.
-///
 /// [`Publisher`]: super::Publisher
 pub trait PublisherMiddleware<const PUBLISHER_CONFIRMATION: bool>: Send + Sync {
     async fn handle(

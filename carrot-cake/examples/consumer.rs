@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // If you are building a message consumer, you'll be working with `ConsumerGroup`.
     // A consumer group is a set of message handlers sharing the same context.
     //
-    // `truelayer-pubsub` provides a fluent API to build consumers by adding configuration
+    // `carrot-cake` provides a fluent API to build consumers by adding configuration
     // in a step-by-step fashion.
     // Certain types of configuration values can only be added at the group level (e.g. connection
     // factory, context, queue name prefix), others can be set both at the group and message
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // when the processing of an incoming message fails with an error classified as transient
         // - e.g. retryable.
         // We are using `NeverRequeue` - nack the message with the broker and do not requeue.
-        // Check `rust-amqp-retry` for more advanced retry logic for transient failures.
+        // Check `carrot-cake-amqp-retry` for more advanced retry logic for transient failures.
         .transient_error_hook(NeverRequeue)
         // You can add middleware to inject logic before and after the handler logic.
         // Middlewares are executed in the order they are registered: the first registered
@@ -87,7 +87,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         //  Ack/Nack with the broker ->
         // DummyTelemetryMiddleware
         //
-        // Check the `truelayer-pubsub-observability` crate for telemetry middlewares.
         .with_processing_middleware(DummyProcessingMiddlewareA)
         .with_telemetry_middleware(DummyTelemetryMiddleware)
         // Once we are done with the group-level configuration we can start adding message handlers.
@@ -190,8 +189,6 @@ pub async fn even_handler(incoming: Incoming<'_, Context>) -> Result<(), Handler
 // Three dummy middlewares:
 // - the first two are processing middlewares, they influence the processing outcome;
 // - the second is a telemetry middleware, it logs out the outcome.
-//
-// Check out the `truelayer-pubsub-observability` crate for useful telemetry middlewares.
 
 pub struct DummyProcessingMiddlewareA;
 
