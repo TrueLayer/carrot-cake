@@ -8,6 +8,7 @@ pub use builders::{
 pub use error::{ErrorType, HandlerError};
 pub use extensions::{get_message_local_item, set_message_local_item};
 pub use handler::{AsyncClosure, ClosureHandler, Handler};
+pub use incoming_message::Delivery;
 pub use incoming_message::Incoming;
 pub use pre_start_hook::ConsumerPreStartHook;
 pub use processing_middleware::{Next, ProcessingMiddleware};

@@ -1,4 +1,5 @@
-use lapin::message::Delivery;
+use amq_protocol_types::{DeliveryTag, ShortString};
+use lapin::{acker::Acker, BasicProperties};
 use std::sync::Arc;
 
 /// A dequeued message enriched with some auxiliary data, ready for processing.
@@ -26,4 +27,49 @@ pub struct Incoming<'d, C> {
     pub message: &'d Delivery,
     /// The name of the queue.
     pub queue_name: String,
+}
+
+/// A received AMQP message.
+#[derive(Debug, PartialEq)]
+pub struct Delivery {
+    /// The delivery tag of the message.
+    pub delivery_tag: DeliveryTag,
+
+    /// The exchange of the message. May be an empty string
+    /// if the default exchange is used.
+    pub exchange: ShortString,
+
+    /// The routing key of the message. May be an empty string
+    /// if no routing key is specified.
+    pub routing_key: ShortString,
+
+    /// Whether this message was redelivered
+    pub redelivered: bool,
+
+    /// Contains the properties and the headers of the
+    /// message.
+    pub properties: BasicProperties,
+
+    /// The payload of the message in binary format.
+    pub data: Vec<u8>,
+
+    /// The acker used to ack/nack the message
+    // Hidden from public interface, to stop a message being acked / rejected inside a message handler.
+    // AMQP protocol specifics that a message must not be acked /rejected multiple times:
+    // https://www.rabbitmq.com/amqp-0-9-1-reference.html#basic.ack.delivery-tag
+    pub(crate) acker: Acker,
+}
+
+impl From<lapin::message::Delivery> for Delivery {
+    fn from(value: lapin::message::Delivery) -> Self {
+        Self {
+            delivery_tag: value.delivery_tag,
+            exchange: value.exchange,
+            routing_key: value.routing_key,
+            redelivered: value.redelivered,
+            properties: value.properties,
+            data: value.data,
+            acker: value.acker,
+        }
+    }
 }

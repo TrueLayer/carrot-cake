@@ -317,6 +317,7 @@ impl<C: Send + Sync + 'static, E: Send + Sync + 'static> Consumer<C, E> {
             processing_chain: next,
             next_telemetry_middleware: &telemetry_middleware_chain,
         };
+        let delivery = delivery.into();
         let incoming = Incoming {
             context,
             message: &delivery,

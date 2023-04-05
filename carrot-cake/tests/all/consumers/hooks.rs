@@ -2,15 +2,14 @@ use crate::helpers::{get_connection_factory, get_publisher};
 use amq_protocol_types::FieldTable;
 use anyhow::Error;
 use carrot_cake::{
-    amqp::Delivery,
     consumers::{
         hooks::{
             pre_start::DurableQueueCreator,
             transient_error::{AlwaysRequeue, NeverRequeue},
         },
-        ConsumerGroup, ConsumerPreStartHook, ConsumerTransientErrorHook, ErrorType, HandlerError,
-        Incoming, MessageHandler, MessageProcessing, ProcessingOutcome, ShouldRequeue,
-        TelemetryMiddleware,
+        ConsumerGroup, ConsumerPreStartHook, ConsumerTransientErrorHook, Delivery, ErrorType,
+        HandlerError, Incoming, MessageHandler, MessageProcessing, ProcessingOutcome,
+        ShouldRequeue, TelemetryMiddleware,
     },
     publishers::MessageEnvelope,
     rabbit_mq::{Channel, WITHOUT_PUBLISHER_CONFIRMATION},
