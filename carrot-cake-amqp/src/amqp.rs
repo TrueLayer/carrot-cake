@@ -7,8 +7,6 @@ use crate::amqp::protocol_types::AMQPValue;
 use cookie_factory::gen_simple;
 use lapin::protocol::basic::{gen_properties, parse_properties};
 
-/// An AMQP message retrieved from a queue. Re-exported from `lapin`.
-pub use lapin::message::Delivery;
 /// The set of AMQP headers associated with a message. Re-exported from `lapin`.
 pub use lapin::protocol::basic::AMQPProperties;
 /// The error type returned when working with `lapin` types and functions.
