@@ -7,7 +7,7 @@ use crate::connection::ConnectionPool;
 
 /// `ChannelPool` pools [`Channel`]s.
 ///
-/// It maintans an internal pool of connections to the rabbitmq instance.
+/// It maintains an internal pool of connections to the rabbitmq instance.
 pub type ChannelPool<const PUBLISHER_CONFIRMATION: bool> =
     deadpool::managed::Pool<ChannelManager<{ PUBLISHER_CONFIRMATION }>>;
 
@@ -15,7 +15,7 @@ pub type ChannelPool<const PUBLISHER_CONFIRMATION: bool> =
 /// a pool of [Channel][carrot_cake_amqp::rabbit_mq::Channel]s.
 ///
 /// `ChannelManager` keeps an internal [Connection][carrot_cake_amqp::rabbit_mq::Connection] pool
-///  in order to resuse connections across channels.
+///  in order to reuse connections across channels.
 ///
 pub struct ChannelManager<const PUBLISHER_CONFIRMATION: bool> {
     connection_pool: ConnectionPool,
@@ -31,7 +31,7 @@ impl<const PUBLISHER_CONFIRMATION: bool> ChannelManager<{ PUBLISHER_CONFIRMATION
         Self { connection_pool }
     }
 
-    /// Both `WithConfirmation` and `WithoutConfirmation` are handleded equally.
+    /// Both `WithConfirmation` and `WithoutConfirmation` are handled equally.
     fn recycle_common(
         &self,
         obj: &mut Channel<{ PUBLISHER_CONFIRMATION }>,

@@ -34,12 +34,12 @@ impl<E: fmt::Display> fmt::Display for HandlerError<E> {
 }
 
 /// Types of failure when handling a message.
-/// Used by the pub sub framework to handle retries/naks/dead letter queues/etc.
+/// Used by the pub sub framework to handle retries/nacks/dead letter queues/etc.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ErrorType {
     /// Message processing might succeed if retried after a short delay.
     ///
-    /// E.g. the message handler encountered a time out when trying to call an API to fulfill
+    /// E.g. the message handler encountered a time out when trying to call an API to fulfil
     /// the message processing requirements.
     ///
     /// The pubsub framework will execute the [transient error hook](crate::consumers::ConsumerTransientErrorHook)

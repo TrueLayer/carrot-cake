@@ -11,7 +11,7 @@ use super::incoming_message::Delivery;
 
 /// Middlewares to collect and emit telemetry data based on the outcome of message processing.
 ///
-/// # Usecase
+/// # Use case
 ///
 /// `TelemetryMiddleware`s get **read-only** access to the input and outputs of message processing.
 ///

@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 /// Middlewares to execute logic before and after the message handler function.
 ///
-/// # Usecase
+/// # Use case
 ///
 /// The main purpose of processing middlewares is to extract and centralise common non-business logic
 /// that might impact the outcome of the processing.  

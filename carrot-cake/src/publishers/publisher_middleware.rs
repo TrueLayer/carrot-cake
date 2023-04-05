@@ -7,7 +7,7 @@ use task_local_extensions::Extensions;
 #[async_trait::async_trait]
 /// Middlewares to execute logic before and after a message is published by [`Publisher`].
 ///
-/// # Usecase
+/// # Use case
 ///
 /// The main purpose of middlewares is to extract and centralise common non-business logic that would
 /// otherwise have to be copy-pasted for all publishers.  

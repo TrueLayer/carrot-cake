@@ -103,7 +103,7 @@ impl ConnectionFactory {
 
     /// Replaces the TLS Connector for the connection factory
     pub fn set_tls_connector(&mut self, connector: NativeTlsConnector) {
-        self.set_tls_connector_with_domain(connector, self.uri.authority.host.clone())
+        self.set_tls_connector_with_domain(connector, self.uri.authority.host.clone());
     }
 
     /// Replaces the TLS Connector for the connection factory, along with the expected domain name for the certificate
@@ -113,9 +113,9 @@ impl ConnectionFactory {
         domain_name: String,
     ) {
         self.tls = Some(Arc::new(Tls {
-            domain_name,
             connector,
-        }))
+            domain_name,
+        }));
     }
 
     /// Create a new connection to a RabbitMq broker.
