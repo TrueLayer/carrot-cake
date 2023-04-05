@@ -100,9 +100,10 @@ where
 
 #[cfg(test)]
 mod test {
+    use crate::consumers::incoming_message::Delivery;
+
     use super::*;
     use carrot_cake_amqp::amqp::AMQPProperties;
-    use lapin::message::Delivery;
     use std::sync::Arc;
 
     async fn handler(_incoming: Incoming<'_, ()>) -> Result<(), HandlerError<()>> {

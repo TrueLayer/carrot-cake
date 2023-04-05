@@ -1,4 +1,4 @@
-use lapin::message::Delivery;
+use super::incoming_message::Delivery;
 
 #[async_trait::async_trait]
 /// A hook to determine if failed messages due to a transient error should be requeued.

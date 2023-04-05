@@ -1,7 +1,6 @@
 //! A collection of transient error hooks.
 
-use crate::consumers::{ConsumerTransientErrorHook, ShouldRequeue};
-use lapin::message::Delivery;
+use crate::consumers::{incoming_message::Delivery, ConsumerTransientErrorHook, ShouldRequeue};
 
 /// Never requeue a message that failed with a transient error.
 pub struct NeverRequeue;

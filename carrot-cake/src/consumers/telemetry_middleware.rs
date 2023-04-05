@@ -1,5 +1,4 @@
 //! Middleware types are heavily inspired by `tide`'s approach to middleware.
-use crate::amqp::Delivery;
 use crate::consumers::processing_middleware::Next;
 use crate::consumers::telemetry_middleware::BrokerAction::Ack;
 use crate::consumers::{
@@ -7,6 +6,8 @@ use crate::consumers::{
 };
 use lapin::options::{BasicAckOptions, BasicNackOptions, BasicRejectOptions};
 use std::sync::Arc;
+
+use super::incoming_message::Delivery;
 
 /// Middlewares to collect and emit telemetry data based on the outcome of message processing.
 ///
@@ -214,6 +215,7 @@ async fn ack_or_nack<Error>(
     match outcome {
         Ok(_) => {
             message
+                .acker
                 .ack(BasicAckOptions::default())
                 .await
                 .map_err(anyhow::Error::from)
@@ -233,6 +235,7 @@ async fn handle_fatal_error(message: &Delivery) -> Result<BrokerAction, InnerBro
     let reject_options = BasicRejectOptions { requeue: false };
 
     message
+        .acker
         .reject(reject_options)
         .await
         .map_err(anyhow::Error::from)
@@ -262,6 +265,7 @@ async fn handle_transient_error(
             };
 
             message
+                .acker
                 .nack(nack_options)
                 .await
                 .map_err(anyhow::Error::from)
@@ -275,6 +279,7 @@ async fn handle_transient_error(
             let reject_options = BasicRejectOptions { requeue: false };
 
             message
+                .acker
                 .reject(reject_options)
                 .await
                 .map_err(anyhow::Error::from)
@@ -288,6 +293,7 @@ async fn handle_transient_error(
             let ack_options = BasicAckOptions { multiple: false };
 
             message
+                .acker
                 .ack(ack_options)
                 .await
                 .map_err(anyhow::Error::from)
