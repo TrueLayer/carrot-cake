@@ -182,19 +182,19 @@ async fn exchange_to_durable_queue_binder<E: ExchangeBuilder>(
 /// Hook that ensure a durable queue is created & bound to an existing exchange
 /// with potentially multiple routing keys.
 pub struct DurableQueueToExistingExchange {
-    pub exchange_name: &'static str,
-    pub routing_keys: &'static [&'static str],
+    pub exchange_name: String,
+    pub routing_keys: Vec<String>,
 }
 
 impl ExchangeBuilder for DurableQueueToExistingExchange {
     fn exchange_name(&self) -> &str {
-        self.exchange_name
+        &self.exchange_name
     }
 
-    type RoutingKeys<'a> = StringSliceIter<'a, &'static str>;
+    type RoutingKeys<'a> = StringSliceIter<'a, String>;
 
     fn routing_keys(&self) -> Self::RoutingKeys<'_> {
-        self.routing_keys.iter().map(|s| s)
+        self.routing_keys.iter().map(String::as_str)
     }
 }
 
@@ -209,9 +209,9 @@ impl ConsumerPreStartHook for DurableQueueToExistingExchange {
         channel
             .create_durable_queue_with_args(queue_name, queue_args)
             .await?;
-        for routing_key in self.routing_keys {
+        for routing_key in &self.routing_keys {
             channel
-                .bind_queue(queue_name, self.exchange_name, routing_key)
+                .bind_queue(queue_name, &self.exchange_name, routing_key)
                 .await?;
         }
         Ok(())
