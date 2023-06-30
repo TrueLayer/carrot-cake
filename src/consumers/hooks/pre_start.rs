@@ -65,7 +65,9 @@ use std::sync::Arc;
 use crate::consumers::ConsumerPreStartHook;
 use amq_protocol_types::{AMQPValue, FieldTable, LongString, ShortString};
 use async_trait::async_trait;
-use lapin::options::{ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions};
+use lapin::options::{
+    ExchangeBindOptions, ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions,
+};
 use lapin::Channel;
 pub use lapin::ExchangeKind;
 
@@ -179,12 +181,12 @@ impl<E: ConsumerPreStartHook> ConsumerPreStartHook for WithDeadLetterQueue<E> {
 
         let dlx = Bind {
             /// declare a durable dead letter exchange
-            exchange: DeclareDurableExchange {
+            from_exchange: DeclareDurableExchange {
                 name: dead_letter.clone(),
                 kind: ExchangeKind::Fanout,
             },
             /// and a durable queue
-            queue: DeclareDurableQueue,
+            to: DeclareDurableQueue,
             /// bind them without a routing key
             binding: RoutingKey(String::new()),
         };
@@ -202,9 +204,9 @@ impl<E: ConsumerPreStartHook> ConsumerPreStartHook for WithDeadLetterQueue<E> {
 
 /// Bind the exchange defined by [`ExchangeSetup`] to the queue that will be defined in the nested `Queue` [`ConsumerPreStartHook`]
 /// using the [`Binding`] method specified.
-pub struct Bind<Exchange: ExchangeSetup, Queue: ConsumerPreStartHook, Binds: Binding> {
-    pub exchange: Exchange,
-    pub queue: Queue,
+pub struct Bind<Exchange: ExchangeSetup, QueueOrExchange, Binds: Binding> {
+    pub from_exchange: Exchange,
+    pub to: QueueOrExchange,
     pub binding: Binds,
 }
 
@@ -216,12 +218,42 @@ impl<E: ExchangeSetup, Q: ConsumerPreStartHook, B: Binding> ConsumerPreStartHook
         queue_name: &str,
         queue_args: FieldTable,
     ) -> Result<(), anyhow::Error> {
-        self.exchange.setup_exchange(channel).await?;
-        self.queue.run(channel, queue_name, queue_args).await?;
+        self.from_exchange.setup_exchange(channel).await?;
+        self.to.run(channel, queue_name, queue_args).await?;
         self.binding
-            .bind(channel, self.exchange.exchange_name(), queue_name)
+            .bind_queue(channel, self.from_exchange.exchange_name(), queue_name)
             .await?;
 
+        Ok(())
+    }
+}
+
+/// Bind the exchange defined by [`ExchangeSetup`] to the queue that will be defined in the nested `Queue` [`ConsumerPreStartHook`]
+/// using the [`Binding`] method specified.
+pub struct ExchangeBind<FromExchange: ExchangeSetup, ToExchange: ExchangeSetup, Binds: Binding> {
+    pub from_exchange: FromExchange,
+    pub to_exchange: ToExchange,
+    pub binding: Binds,
+}
+
+#[async_trait::async_trait]
+impl<F: ExchangeSetup, T: ExchangeSetup, B: Binding> ExchangeSetup for Bind<F, T, B> {
+    /// The name of the exchange that will be set up.
+    fn exchange_name(&self) -> &str {
+        self.from_exchange.exchange_name()
+    }
+
+    /// Ensures the exchange is set up.
+    async fn setup_exchange(&self, channel: &Channel) -> Result<(), anyhow::Error> {
+        self.from_exchange.setup_exchange(channel).await?;
+        self.to.setup_exchange(channel).await?;
+        self.binding
+            .bind_exchange(
+                channel,
+                self.from_exchange.exchange_name(),
+                self.to.exchange_name(),
+            )
+            .await?;
         Ok(())
     }
 }
@@ -263,12 +295,20 @@ impl ConsumerPreStartHook for DeclareDurableQueue {
 /// * [`RoutingKey`] - binds the queue to an exchange using routing keys.
 /// * [`Vec<_>`] - binds the queue to an exchange using many bindings, eg `Vec<RoutingKey>` will bind using many routing keys.
 pub trait Binding: Send + Sync + 'static {
-    /// Ensure the exchange is created
-    async fn bind(
+    /// Bind the queue to the exchange
+    async fn bind_queue(
         &self,
         channel: &Channel,
         exchange_name: &str,
         queue_name: &str,
+    ) -> Result<(), anyhow::Error>;
+
+    /// Bind the exchange to the exchange
+    async fn bind_exchange(
+        &self,
+        channel: &Channel,
+        from_exchange_name: &str,
+        to_exchange_name: &str,
     ) -> Result<(), anyhow::Error>;
 }
 
@@ -283,14 +323,8 @@ pub enum Headers {
     Any(Vec<(String, String)>),
 }
 
-#[async_trait::async_trait]
-impl Binding for Headers {
-    async fn bind(
-        &self,
-        channel: &Channel,
-        exchange_name: &str,
-        queue_name: &str,
-    ) -> Result<(), anyhow::Error> {
+impl Headers {
+    fn args(&self) -> BTreeMap<ShortString, AMQPValue> {
         let (headers, match_type) = match self {
             Self::All(headers) => (headers, LongString::from("all")),
             Self::Any(headers) => (headers, LongString::from("any")),
@@ -301,14 +335,43 @@ impl Binding for Headers {
             .map(|(key, value)| (key.into(), LongString::from(value).into()))
             .collect();
         args.insert("x-match".into(), match_type.into());
+        args
+    }
+}
 
+#[async_trait::async_trait]
+impl Binding for Headers {
+    async fn bind_queue(
+        &self,
+        channel: &Channel,
+        exchange_name: &str,
+        queue_name: &str,
+    ) -> Result<(), anyhow::Error> {
         channel
             .queue_bind(
                 queue_name,
                 exchange_name,
                 "",
                 QueueBindOptions { nowait: false },
-                args.into(),
+                self.args().into(),
+            )
+            .await?;
+
+        Ok(())
+    }
+    async fn bind_exchange(
+        &self,
+        channel: &Channel,
+        exchange_name: &str,
+        queue_name: &str,
+    ) -> Result<(), anyhow::Error> {
+        channel
+            .exchange_bind(
+                queue_name,
+                exchange_name,
+                "",
+                ExchangeBindOptions { nowait: false },
+                self.args().into(),
             )
             .await?;
 
@@ -333,7 +396,7 @@ impl From<String> for RoutingKey {
 
 #[async_trait::async_trait]
 impl Binding for RoutingKey {
-    async fn bind(
+    async fn bind_queue(
         &self,
         channel: &Channel,
         exchange_name: &str,
@@ -351,18 +414,50 @@ impl Binding for RoutingKey {
 
         Ok(())
     }
+
+    async fn bind_exchange(
+        &self,
+        channel: &Channel,
+        from_exchange_name: &str,
+        to_exchange_name: &str,
+    ) -> Result<(), anyhow::Error> {
+        channel
+            .exchange_bind(
+                to_exchange_name,
+                from_exchange_name,
+                &self.0,
+                ExchangeBindOptions { nowait: false },
+                FieldTable::default(),
+            )
+            .await?;
+
+        Ok(())
+    }
 }
 
 #[async_trait::async_trait]
 impl<B: Binding> Binding for Vec<B> {
-    async fn bind(
+    async fn bind_queue(
         &self,
         channel: &Channel,
         exchange_name: &str,
         queue_name: &str,
     ) -> Result<(), anyhow::Error> {
         for b in self {
-            b.bind(channel, exchange_name, queue_name).await?;
+            b.bind_queue(channel, exchange_name, queue_name).await?;
+        }
+
+        Ok(())
+    }
+    async fn bind_exchange(
+        &self,
+        channel: &Channel,
+        from_exchange_name: &str,
+        to_exchange_name: &str,
+    ) -> Result<(), anyhow::Error> {
+        for b in self {
+            b.bind_exchange(channel, from_exchange_name, to_exchange_name)
+                .await?;
         }
 
         Ok(())
@@ -371,13 +466,26 @@ impl<B: Binding> Binding for Vec<B> {
 
 #[async_trait::async_trait]
 impl Binding for Arc<dyn Binding> {
-    async fn bind(
+    async fn bind_queue(
         &self,
         channel: &Channel,
         exchange_name: &str,
         queue_name: &str,
     ) -> Result<(), anyhow::Error> {
-        self.deref().bind(channel, exchange_name, queue_name).await
+        self.deref()
+            .bind_queue(channel, exchange_name, queue_name)
+            .await
+    }
+
+    async fn bind_exchange(
+        &self,
+        channel: &Channel,
+        from_exchange_name: &str,
+        to_exchange_name: &str,
+    ) -> Result<(), anyhow::Error> {
+        self.deref()
+            .bind_exchange(channel, from_exchange_name, to_exchange_name)
+            .await
     }
 }
 
