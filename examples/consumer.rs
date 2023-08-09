@@ -34,11 +34,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // routing key. We declare a closure, parametrised by the `routing_key`,
     // that we can then call for each handler as appropriate.
     let bind_queue = |routing_key: &str| Bind {
-        exchange: DeclareDurableExchange {
+        from_exchange: DeclareDurableExchange {
             name: "test-exchange".into(),
             kind: ExchangeKind::Direct,
         },
-        queue: DeclareDurableQueue,
+        to: DeclareDurableQueue,
         binding: RoutingKey::from(routing_key),
     };
 

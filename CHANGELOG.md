@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0]
+
 - Initial release
 - Changed `RabbitMqTlsSettings::ca_certificate_chain_pem` from `String` to `Option<String>`
 - Changed `RabbitMqSettings::password` from `String` to `redact::Secret<String>`
