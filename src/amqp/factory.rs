@@ -1,5 +1,4 @@
 use crate::amqp::configuration::RabbitMqSettings;
-use anyhow::Context;
 use lapin::{
     tcp::{AMQPUriTcpExt, NativeTlsConnector},
     uri::{AMQPScheme, AMQPUri},
@@ -42,12 +41,9 @@ impl ConnectionFactory {
                     .domain
                     .clone()
                     .unwrap_or_else(|| settings.amqp_uri().authority.host);
-                let root_certificate = tls_settings
-                    .ca_certificate_chain()
-                    .with_context(|| "Failed to parse CA certificate for RabbitMq TLS.")?;
 
                 let mut connector_builder = NativeTlsConnector::builder();
-                if let Some(certificate) = root_certificate {
+                if let Some(certificate) = tls_settings.ca_certificate_chain()? {
                     connector_builder.add_root_certificate(certificate);
                 }
 
