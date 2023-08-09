@@ -2,6 +2,7 @@
 use anyhow::Context;
 use lapin::uri::{AMQPAuthority, AMQPScheme, AMQPUri, AMQPUserInfo};
 use native_tls::Certificate;
+use redact::Secret;
 use serde::Deserialize;
 use serde_aux::field_attributes::deserialize_number_from_string;
 
@@ -22,7 +23,7 @@ pub struct RabbitMqSettings {
     /// The username used to authenticate with the RabbitMq broker.
     pub username: String,
     /// The password used to authenticate with the RabbitMq broker.
-    pub password: String,
+    pub password: Secret<String>,
     /// How long you should wait when trying to connect to a RabbitMq broker before giving up,
     /// in seconds.
     pub connection_timeout_seconds: Option<u64>,
@@ -41,7 +42,7 @@ impl Default for RabbitMqSettings {
             uri: "localhost".into(),
             vhost: "/".into(),
             username: "guest".into(),
-            password: "guest".into(),
+            password: "guest".to_owned().into(),
             connection_timeout_seconds: Some(10),
             port: 5672,
             tls: None,
@@ -58,6 +59,8 @@ pub struct RabbitMqTlsSettings {
     /// Root certificate chain to be trusted when validating server certificates.
     ///
     /// To be specified in PEM format.
+    ///
+    /// If set to `None`, the system's trust root will be used by default.
     ///
     /// # Examples
     ///
@@ -79,14 +82,18 @@ pub struct RabbitMqTlsSettings {
     /// <-- OMITTED -->
     /// -----END CERTIFICATE-----
     /// ```
-    pub ca_certificate_chain_pem: String,
+    ca_certificate_chain_pem: Option<String>,
 }
 
 impl RabbitMqTlsSettings {
     /// It parses the CA certificate chain and returns it in the strongly-typed format
     /// provided by the `native_tls` crate.
-    pub fn ca_certificate_chain(&self) -> Result<Certificate, anyhow::Error> {
-        Certificate::from_pem(self.ca_certificate_chain_pem.as_bytes())
+    pub fn ca_certificate_chain(&self) -> Result<Option<Certificate>, anyhow::Error> {
+        self.ca_certificate_chain_pem
+            .as_ref()
+            .map(String::as_bytes)
+            .map(Certificate::from_pem)
+            .transpose()
             .context("Failed to decode PEM certificate chain for RabbitMQ TLS.")
     }
 }
@@ -100,7 +107,7 @@ impl RabbitMqSettings {
             authority: AMQPAuthority {
                 userinfo: AMQPUserInfo {
                     username: self.username.clone(),
-                    password: self.password.clone(),
+                    password: self.password.expose_secret().clone(),
                 },
                 host: self.uri.clone(),
                 port: self.port,
