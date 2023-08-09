@@ -17,6 +17,7 @@ cookie-factory = "0.3"
 deadpool = { version = "0.9", default-features = false, features = ["managed"] }
 lapin = { version = "2.1", features = ["native-tls"] }
 native-tls = "0.2"
+redact = { version = "0.1", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde-aux = "4"
 shutdown-handler = "0.1"
