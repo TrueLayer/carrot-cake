@@ -45,10 +45,13 @@ impl ConnectionFactory {
                 let root_certificate = tls_settings
                     .ca_certificate_chain()
                     .with_context(|| "Failed to parse CA certificate for RabbitMq TLS.")?;
-                let connector = NativeTlsConnector::builder()
-                    .add_root_certificate(root_certificate)
-                    .build()
-                    .expect("TLS configuration failed");
+
+                let mut connector_builder = NativeTlsConnector::builder();
+                if let Some(certificate) = root_certificate {
+                    connector_builder.add_root_certificate(certificate);
+                }
+
+                let connector = connector_builder.build().expect("TLS configuration failed");
                 Ok(Tls {
                     domain_name: server_domain_name,
                     connector,

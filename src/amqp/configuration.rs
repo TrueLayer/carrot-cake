@@ -60,6 +60,8 @@ pub struct RabbitMqTlsSettings {
     ///
     /// To be specified in PEM format.
     ///
+    /// If set to `None`, the system's trust root will be used by default.
+    ///
     /// # Examples
     ///
     /// ## Single certificate
@@ -80,14 +82,18 @@ pub struct RabbitMqTlsSettings {
     /// <-- OMITTED -->
     /// -----END CERTIFICATE-----
     /// ```
-    pub ca_certificate_chain_pem: String,
+    ca_certificate_chain_pem: Option<String>,
 }
 
 impl RabbitMqTlsSettings {
     /// It parses the CA certificate chain and returns it in the strongly-typed format
     /// provided by the `native_tls` crate.
-    pub fn ca_certificate_chain(&self) -> Result<Certificate, anyhow::Error> {
-        Certificate::from_pem(self.ca_certificate_chain_pem.as_bytes())
+    pub fn ca_certificate_chain(&self) -> Result<Option<Certificate>, anyhow::Error> {
+        self.ca_certificate_chain_pem
+            .as_ref()
+            .map(String::as_bytes)
+            .map(Certificate::from_pem)
+            .transpose()
             .context("Failed to decode PEM certificate chain for RabbitMQ TLS.")
     }
 }
