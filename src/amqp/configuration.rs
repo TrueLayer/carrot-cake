@@ -50,9 +50,10 @@ impl Default for RabbitMqSettings {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
 /// Configuration to establish an encrypted connection with a RabbitMq broker.
+#[derive(Debug, Deserialize, Clone)]
 #[serde(untagged)]
+#[non_exhaustive]
 pub enum RabbitMqTlsSettings {
     Enabled(bool),
     Custom {
