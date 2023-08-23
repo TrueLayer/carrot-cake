@@ -38,7 +38,7 @@ impl ConnectionFactory {
             .as_ref()
             .map::<Result<Tls, anyhow::Error>, _>(|tls_settings| {
                 let server_domain_name = tls_settings
-                    .domain
+                    .domain()
                     .clone()
                     .unwrap_or_else(|| settings.amqp_uri().authority.host);
 

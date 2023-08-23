@@ -50,51 +50,71 @@ impl Default for RabbitMqSettings {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
 /// Configuration to establish an encrypted connection with a RabbitMq broker.
-pub struct RabbitMqTlsSettings {
-    /// The domain we expect as CN on the server certificate.
-    /// If left unspecified, it defaults to the uri host.
-    pub domain: Option<String>,
-    /// Root certificate chain to be trusted when validating server certificates.
-    ///
-    /// To be specified in PEM format.
-    ///
-    /// If set to `None`, the system's trust root will be used by default.
-    ///
-    /// # Examples
-    ///
-    /// ## Single certificate
-    ///
-    /// ```text
-    /// -----BEGIN CERTIFICATE-----
-    /// <-- OMITTED -->
-    /// -----END CERTIFICATE-----
-    /// ```
-    ///
-    /// ## Certificate chain
-    ///
-    /// ```text
-    /// -----BEGIN CERTIFICATE-----
-    /// <-- OMITTED -->
-    /// -----END CERTIFICATE-----
-    /// -----BEGIN CERTIFICATE-----
-    /// <-- OMITTED -->
-    /// -----END CERTIFICATE-----
-    /// ```
-    ca_certificate_chain_pem: Option<String>,
+#[derive(Debug, Deserialize, Clone)]
+#[serde(untagged)]
+#[non_exhaustive]
+pub enum RabbitMqTlsSettings {
+    Enabled(bool),
+    Custom {
+        /// The domain we expect as CN on the server certificate.
+        /// If left unspecified, it defaults to the uri host.
+        domain: Option<String>,
+        /// Root certificate chain to be trusted when validating server certificates.
+        ///
+        /// To be specified in PEM format.
+        ///
+        /// If set to `None`, the system's trust root will be used by default.
+        ///
+        /// # Examples
+        ///
+        /// ## Single certificate
+        ///
+        /// ```text
+        /// -----BEGIN CERTIFICATE-----
+        /// <-- OMITTED -->
+        /// -----END CERTIFICATE-----
+        /// ```
+        ///
+        /// ## Certificate chain
+        ///
+        /// ```text
+        /// -----BEGIN CERTIFICATE-----
+        /// <-- OMITTED -->
+        /// -----END CERTIFICATE-----
+        /// -----BEGIN CERTIFICATE-----
+        /// <-- OMITTED -->
+        /// -----END CERTIFICATE-----
+        /// ```
+        ca_certificate_chain_pem: Option<String>,
+    },
 }
 
 impl RabbitMqTlsSettings {
     /// It parses the CA certificate chain and returns it in the strongly-typed format
     /// provided by the `native_tls` crate.
     pub fn ca_certificate_chain(&self) -> Result<Option<Certificate>, anyhow::Error> {
-        self.ca_certificate_chain_pem
-            .as_ref()
-            .map(String::as_bytes)
-            .map(Certificate::from_pem)
-            .transpose()
-            .context("Failed to decode PEM certificate chain for RabbitMQ TLS.")
+        if let Self::Custom {
+            ca_certificate_chain_pem,
+            ..
+        } = self
+        {
+            ca_certificate_chain_pem
+                .as_ref()
+                .map(String::as_bytes)
+                .map(Certificate::from_pem)
+                .transpose()
+                .context("Failed to decode PEM certificate chain for RabbitMQ TLS.")
+        } else {
+            Ok(None)
+        }
+    }
+    pub fn domain(&self) -> &Option<String> {
+        if let Self::Custom { domain, .. } = self {
+            domain
+        } else {
+            &None
+        }
     }
 }
 
