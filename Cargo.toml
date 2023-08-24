@@ -1,6 +1,6 @@
 [package]
 name = "carrot-cake"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "An a-peeling pub/sub framework"
 repository = "https://github.com/TrueLayer/carrot-cake"
