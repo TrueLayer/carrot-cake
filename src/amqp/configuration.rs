@@ -50,7 +50,7 @@ impl Default for RabbitMqSettings {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Default)]
 /// Configuration to establish an encrypted connection with a RabbitMq broker.
 pub struct RabbitMqTlsSettings {
     /// The domain we expect as CN on the server certificate.
@@ -82,7 +82,7 @@ pub struct RabbitMqTlsSettings {
     /// <-- OMITTED -->
     /// -----END CERTIFICATE-----
     /// ```
-    ca_certificate_chain_pem: Option<String>,
+    pub ca_certificate_chain_pem: Option<String>,
 }
 
 impl RabbitMqTlsSettings {
