@@ -178,14 +178,14 @@ impl<E: ConsumerPreStartHook> ConsumerPreStartHook for WithDeadLetterQueue<E> {
         let dead_letter = format!("{queue_name}.deadletter");
 
         let dlx = Bind {
-            /// declare a durable dead letter exchange
+            // declare a durable dead letter exchange
             exchange: DeclareDurableExchange {
                 name: dead_letter.clone(),
                 kind: ExchangeKind::Fanout,
             },
-            /// and a durable queue
+            // and a durable queue
             queue: DeclareDurableQueue,
-            /// bind them without a routing key
+            // bind them without a routing key
             binding: RoutingKey(String::new()),
         };
         dlx.run(channel, &dead_letter, FieldTable::default())

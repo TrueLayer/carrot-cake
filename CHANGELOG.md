@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.2]
 
-- Made `RabbitMqTlsSettings::ca_certificate_chain_pem` from `String` to `Option<String>` public
+- Made `RabbitMqTlsSettings::ca_certificate_chain_pem` public
 
 ## [0.1.1]
 
