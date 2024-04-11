@@ -82,7 +82,7 @@ pub struct RabbitMqTlsSettings {
     /// <-- OMITTED -->
     /// -----END CERTIFICATE-----
     /// ```
-    ca_certificate_chain_pem: Option<String>,
+    pub ca_certificate_chain_pem: Option<String>,
 }
 
 impl RabbitMqTlsSettings {
