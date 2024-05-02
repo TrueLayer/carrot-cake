@@ -168,6 +168,7 @@ impl ExchangeSetup for ExistingExchange {
 pub struct WithDeadLetterQueue<H: ConsumerPreStartHook>(pub H);
 
 #[async_trait::async_trait]
+#[allow(unused_doc_comments)]
 impl<E: ConsumerPreStartHook> ConsumerPreStartHook for WithDeadLetterQueue<E> {
     async fn run(
         &self,
