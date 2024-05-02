@@ -241,6 +241,7 @@ async fn message_id_and_timestamp_not_replaced_when_provided() {
 
     struct TestHandler;
     #[async_trait]
+    #[allow(clippy::assigning_clones)]
     impl Handler for TestHandler {
         type Error = ();
         type Context = Context;
