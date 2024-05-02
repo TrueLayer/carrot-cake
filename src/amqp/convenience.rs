@@ -49,6 +49,10 @@ pub fn serialize_properties(properties: &BasicProperties) -> Result<Vec<u8>, any
     gen_simple(gen_properties(properties), Vec::new()).map_err(Into::into)
 }
 
+pub fn dummy_test_to_trigger_release() {
+    println!("does release please need an actual code change");
+}
+
 /// Deserialize AMQP properties from a bytes buffer.
 pub fn deserialize_properties(bytes: &[u8]) -> Result<BasicProperties, anyhow::Error> {
     parse_properties(bytes).map_err(Into::into).map(|x| x.1)
