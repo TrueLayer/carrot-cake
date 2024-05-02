@@ -1,6 +1,8 @@
 # carrot-cake
 ## An a-peeling pub/sub framework
 
+test fake release
+
 [![Crates.io](https://img.shields.io/crates/v/carrot-cake.svg)](https://crates.io/crates/carrot-cake)
 [![Docs.rs](https://docs.rs/carrot-cake/badge.svg)](https://docs.rs/carrot-cake)
 [![CI](https://github.com/truelayer/carrot-cake/workflows/CI/badge.svg)](https://github.com/truelayer/carrot-cake/actions)
